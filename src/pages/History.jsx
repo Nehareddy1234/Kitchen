@@ -1,0 +1,256 @@
+import React, { useState } from 'react';
+import { Search, Calendar, DollarSign, ShoppingBag, Eye, Printer, FileText } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import './History.css';
+
+export default function History() {
+  const { orderHistory } = useApp();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [dateFilter, setDateFilter] = useState('All');
+
+  const getActualDate = (dateStr) => {
+    if (!dateStr || dateStr === 'Today') {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    }
+    return dateStr;
+  };
+
+  const filteredByDate = dateFilter === 'All' 
+    ? orderHistory 
+    : orderHistory.filter(o => getActualDate(o.date) === dateFilter);
+
+  const filteredHistory = filteredByDate.filter(order => {
+    const matchesId = order.id.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesTable = order.table.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesId || matchesTable;
+  });
+
+  const totalRevenue = filteredByDate.reduce((sum, order) => sum + order.total, 0);
+  const totalOrders = filteredByDate.length;
+
+  const [showEODModal, setShowEODModal] = useState(false);
+
+  // Calculate dish counts for EOD report
+  const eodDishCounts = {};
+  filteredByDate.forEach(order => {
+    order.itemList?.forEach(itemStr => {
+      const parts = itemStr.split(' x');
+      const namePart = parts[0].replace(/\s*\([^)]+\)/g, '').trim();
+      const qty = parseInt(parts[1] || '1', 10);
+      
+      eodDishCounts[namePart] = (eodDishCounts[namePart] || 0) + qty;
+    });
+  });
+
+  const sortedEODDishes = Object.entries(eodDishCounts).sort((a,b) => b[1] - a[1]);
+
+  return (
+    <div className="history-page">
+      <header className="history-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h1>Order History</h1>
+          <p className="text-muted">Review all completed and paid orders received till now</p>
+        </div>
+        <div className="date-filter-container" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--card-bg, #fff)', padding: '0.5rem 1rem', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+          <Calendar size={18} className="text-muted" />
+          <input 
+            type="date"
+            value={dateFilter === 'All' ? '' : dateFilter}
+            onChange={(e) => setDateFilter(e.target.value || 'All')}
+            style={{ border: 'none', background: 'transparent', color: 'var(--text-main)', outline: 'none', fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer' }}
+          />
+          <button 
+            className={`btn ${dateFilter === 'All' ? 'btn-primary' : 'btn-outline'}`}
+            style={{ padding: '0.2rem 0.6rem', fontSize: '0.8rem' }}
+            onClick={() => setDateFilter('All')}
+          >
+            Till Date
+          </button>
+          <button 
+            className="btn btn-primary" 
+            style={{ marginLeft: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', fontSize: '0.9rem' }}
+            onClick={() => setShowEODModal(true)}
+          >
+            <FileText size={16} />
+            EOD Report
+          </button>
+        </div>
+      </header>
+
+      {/* Summary Row */}
+      <div className="history-summary-row">
+        <div className="summary-card card">
+          <div className="summary-icon" style={{ background: 'rgba(76, 209, 55, 0.1)', color: 'var(--success)' }}>
+            <DollarSign size={20} />
+          </div>
+          <div className="summary-info">
+            <span className="summary-label">Total History Revenue</span>
+            <strong className="summary-value">₹{totalRevenue.toLocaleString()}</strong>
+          </div>
+        </div>
+
+        <div className="summary-card card">
+          <div className="summary-icon" style={{ background: 'rgba(9, 132, 227, 0.1)', color: 'var(--primary)' }}>
+            <ShoppingBag size={20} />
+          </div>
+          <div className="summary-info">
+            <span className="summary-label">Total Paid Orders</span>
+            <strong className="summary-value">{totalOrders} Orders</strong>
+          </div>
+        </div>
+      </div>
+
+      <div className="history-content">
+        {/* Table list */}
+        <div className="history-list-card card">
+          <div className="list-header">
+            <h2>Order Logs</h2>
+            <div className="search-bar">
+              <Search size={18} className="text-muted" />
+              <input
+                type="text"
+                placeholder="Search by ID or Table..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="history-table-container">
+            {filteredHistory.length === 0 ? (
+              <p className="empty-msg">No historical orders match the search criteria.</p>
+            ) : (
+              <table className="history-table">
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Date &amp; Time</th>
+                    <th>Table</th>
+                    <th>Items Count</th>
+                    <th>Total Bill</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredHistory.map(order => (
+                    <tr key={order.id}>
+                      <td><strong className="order-id">{order.id}</strong></td>
+                      <td>
+                        <div className="date-time">
+                          <span>{order.date || 'Today'}</span>
+                          <span className="text-muted" style={{ fontSize: '0.75rem' }}>at {order.closedAt}</span>
+                        </div>
+                      </td>
+                      <td><span className="table-badge">{order.table}</span></td>
+                      <td>{order.itemList?.length || 0} items</td>
+                      <td><strong className="price-label">₹{order.total}</strong></td>
+                      <td>
+                        <button
+                          className="btn btn-outline detail-btn"
+                          onClick={() => setSelectedOrder(order)}
+                          style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                        >
+                          <Eye size={14} /> View Details
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
+        {/* Selected Order Detail Sidebar / Popup */}
+        {selectedOrder && (
+          <div className="order-detail-modal">
+            <div className="modal-content card">
+              <div className="modal-header">
+                <h3>Order {selectedOrder.id} Details</h3>
+                <button className="close-btn" onClick={() => setSelectedOrder(null)}>&times;</button>
+              </div>
+              <div className="modal-body">
+                <div className="detail-row">
+                  <span>Status</span>
+                  <span className="status-paid-badge">Paid</span>
+                </div>
+                <div className="detail-row">
+                  <span>Table/Type</span>
+                  <strong>{selectedOrder.table}</strong>
+                </div>
+                <div className="detail-row">
+                  <span>Completed At</span>
+                  <span>{selectedOrder.date || 'Today'} at {selectedOrder.closedAt}</span>
+                </div>
+
+                <div className="item-breakdown" style={{ marginTop: '1.25rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                  <h4 style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--text-muted)' }}>Dishes Ordered</h4>
+                  <ul className="modal-items-list" style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {selectedOrder.itemList?.map((item, idx) => (
+                      <li key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="detail-row total" style={{ marginTop: '1.25rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                  <span>Grand Total</span>
+                  <strong>₹{selectedOrder.total}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* EOD Report Modal */}
+        {showEODModal && (
+          <div className="order-detail-modal">
+            <div className="modal-content card" style={{ maxWidth: '500px', width: '90%' }}>
+              <div className="modal-header">
+                <h3>End of Day Report</h3>
+                <span className="badge-cat" style={{ marginLeft: '1rem' }}>{dateFilter === 'All' ? 'All-Time' : dateFilter}</span>
+                <button className="close-btn" onClick={() => setShowEODModal(false)}>&times;</button>
+              </div>
+              <div className="modal-body">
+                <div className="detail-row">
+                  <span>Total Revenue Collected</span>
+                  <strong style={{ color: 'var(--success)', fontSize: '1.1rem' }}>₹{totalRevenue.toLocaleString()}</strong>
+                </div>
+                <div className="detail-row">
+                  <span>Total Orders Processed</span>
+                  <strong>{totalOrders}</strong>
+                </div>
+
+                <div className="item-breakdown" style={{ marginTop: '1.25rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--text-main)' }}>Dish Quantities Sold</h4>
+                  {sortedEODDishes.length === 0 ? (
+                    <p className="text-muted">No dishes sold for this date.</p>
+                  ) : (
+                    <ul className="modal-items-list" style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '350px', overflowY: 'auto' }}>
+                      {sortedEODDishes.map(([dish, qty], idx) => (
+                        <li key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', padding: '0.4rem 0', borderBottom: '1px dashed var(--border-color)' }}>
+                          <span style={{ fontWeight: 500 }}>{dish}</span>
+                          <strong>x{qty}</strong>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                <div className="modal-actions" style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                  <button className="btn btn-outline" onClick={() => setShowEODModal(false)}>Close</button>
+                  <button className="btn btn-primary" onClick={() => { alert('Printing End of Day Report to thermal printer...'); setShowEODModal(false); }} style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                    <Printer size={16} /> Print Report
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

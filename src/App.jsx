@@ -1,0 +1,123 @@
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Sidebar from './components/Sidebar';
+import { AppProvider, useApp } from './context/AppContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import Dashboard from './pages/Dashboard';
+import POS from './pages/POS';
+import Orders from './pages/Orders';
+import Tables from './pages/Tables';
+import Menu from './pages/Menu';
+import Grocery from './pages/Grocery';
+import History from './pages/History';
+import Analytics from './pages/Analytics';
+import GroceryInventory from './pages/GroceryInventory';
+import GroceryPOS from './pages/GroceryPOS';
+import GroceryHistory from './pages/GroceryHistory';
+import GroceryAnalytics from './pages/GroceryAnalytics';
+import Login from './pages/Login';
+import CustomerMenu from './pages/CustomerMenu';
+import { Menu as HamburgerIcon } from 'lucide-react';
+
+// ─── Protected Route ─────────────────────────────────
+function ProtectedRoute({ children, path }) {
+  const { currentUser, hasAccess } = useAuth();
+
+  if (!currentUser) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Customers always go to their menu
+  if (currentUser.role === 'customer') {
+    return <Navigate to="/customer-menu" replace />;
+  }
+
+  // Check if this role has access to the requested path
+  if (path && !hasAccess(path)) {
+    // Redirect to first allowed page for this role
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+}
+
+// ─── Main App Content ────────────────────────────────
+function AppContent() {
+  const { sidebarMinimized, sidebarOpen, toggleSidebarOpen, closeSidebar } = useApp();
+  const { currentUser } = useAuth();
+
+  // Not logged in — show login
+  if (!currentUser) {
+    return (
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    );
+  }
+
+  // Customer — show their own menu, no sidebar
+  if (currentUser.role === 'customer') {
+    return (
+      <Routes>
+        <Route path="/customer-menu" element={<CustomerMenu />} />
+        <Route path="*" element={<Navigate to="/customer-menu" replace />} />
+      </Routes>
+    );
+  }
+
+  // Staff — full app with sidebar
+  return (
+    <div className={'app-container ' + (sidebarMinimized ? 'sidebar-minimized' : '') + ' ' + (sidebarOpen ? 'sidebar-mobile-open' : '')}>
+      {/* Mobile Header Bar */}
+      <header className="mobile-top-bar">
+        <button className="hamburger-btn" onClick={toggleSidebarOpen} aria-label="Open navigation menu">
+          <HamburgerIcon size={24} />
+        </button>
+        <div className="mobile-brand-logo">RC</div>
+        <span className="mobile-brand-title">Roti Curry POS</span>
+      </header>
+
+      {/* Mobile Backdrop */}
+      {sidebarOpen && <div className="sidebar-backdrop" onClick={closeSidebar}></div>}
+
+      <Sidebar />
+      
+      <main className="main-content">
+        <Routes>
+          <Route path="/"          element={<ProtectedRoute path="/"><Dashboard /></ProtectedRoute>} />
+          <Route path="/pos"       element={<ProtectedRoute path="/pos"><POS /></ProtectedRoute>} />
+          <Route path="/orders"    element={<ProtectedRoute path="/orders"><Orders /></ProtectedRoute>} />
+          <Route path="/tables"    element={<ProtectedRoute path="/tables"><Tables /></ProtectedRoute>} />
+          <Route path="/menu"      element={<ProtectedRoute path="/menu"><Menu /></ProtectedRoute>} />
+          <Route path="/grocery"   element={<ProtectedRoute path="/grocery"><Grocery /></ProtectedRoute>} />
+          <Route path="/history"   element={<ProtectedRoute path="/history"><History /></ProtectedRoute>} />
+          <Route path="/analytics" element={<ProtectedRoute path="/analytics"><Analytics /></ProtectedRoute>} />
+          
+          {/* Grocery Store Routes */}
+          <Route path="/store/pos"       element={<ProtectedRoute path="/store/pos"><GroceryPOS /></ProtectedRoute>} />
+          <Route path="/store/inventory" element={<ProtectedRoute path="/store/inventory"><GroceryInventory /></ProtectedRoute>} />
+          <Route path="/store/history"   element={<ProtectedRoute path="/store/history"><GroceryHistory /></ProtectedRoute>} />
+          <Route path="/store/analytics" element={<ProtectedRoute path="/store/analytics"><GroceryAnalytics /></ProtectedRoute>} />
+
+          <Route path="/login" element={<Navigate to="/" replace />} />
+          <Route path="*"      element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppProvider>
+        <Router>
+          <AppContent />
+        </Router>
+      </AppProvider>
+    </AuthProvider>
+  );
+}
+
+export default App;

@@ -1,0 +1,128 @@
+.orders-page {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.orders-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.orders-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.orders-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  flex: 1;
+  padding-top: 4rem;
+  text-align: center;
+}
+
+.orders-empty h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+/* Orders Grid */
+.orders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.order-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1.25rem;
+  transition: transform 0.2s;
+}
+
+.order-card:hover {
+  transform: translateY(-2px);
+}
+
+.order-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.order-id {
+  display: block;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.order-table {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.1rem;
+}
+
+.order-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.order-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0.75rem 0;
+}
+
+.order-item-row {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  padding: 0.15rem 0;
+}
+
+.order-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.order-time {
+  font-size: 0.8rem;
+}
+
+.order-total {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.order-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.order-actions .btn {
+  flex: 1;
+  font-size: 0.85rem;
+  padding: 0.6rem 0.8rem;
+}

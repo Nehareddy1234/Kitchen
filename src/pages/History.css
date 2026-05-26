@@ -1,0 +1,253 @@
+.history-page {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.history-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+/* Summary stats card */
+.history-summary-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+  .history-summary-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.summary-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+}
+
+.summary-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.summary-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.summary-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.summary-value {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+/* History logs list card */
+.history-list-card {
+  padding: 1.5rem;
+}
+
+.history-list-card .list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+@media (max-width: 600px) {
+  .history-list-card .list-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.history-list-card .list-header h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0;
+}
+
+.history-list-card .search-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--border-color);
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  background: white;
+  width: 250px;
+}
+
+.history-list-card .search-bar input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-family: inherit;
+  font-size: 0.85rem;
+  width: 100%;
+}
+
+.history-table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.history-table th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.history-table td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+
+.history-table tr:last-child td {
+  border-bottom: none;
+}
+
+.order-id {
+  color: var(--text-main);
+  font-family: monospace;
+  font-size: 0.95rem;
+}
+
+.date-time {
+  display: flex;
+  flex-direction: column;
+  font-weight: 500;
+}
+
+.table-badge {
+  background: var(--bg-color);
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  color: var(--text-main);
+  font-weight: 600;
+  border: 1px solid var(--border-color);
+}
+
+.price-label {
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+/* Modal Popup styling */
+.order-detail-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1.5rem;
+}
+
+.order-detail-modal .modal-content {
+  width: 100%;
+  max-width: 400px;
+  padding: 1.5rem;
+  position: relative;
+  animation: slideUp 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.75rem;
+}
+
+.modal-header h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0;
+}
+
+.modal-header .close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  line-height: 1;
+  padding: 0;
+}
+
+.modal-header .close-btn:hover {
+  color: var(--primary);
+}
+
+.status-paid-badge {
+  background: rgba(76, 209, 55, 0.15);
+  color: #27ae60;
+  padding: 0.25rem 0.6rem;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.modal-body .detail-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.modal-body .detail-row.total {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--primary);
+}

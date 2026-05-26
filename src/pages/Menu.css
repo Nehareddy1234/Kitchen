@@ -1,0 +1,312 @@
+.menu-management-page {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.menu-page {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  overflow-y: auto;
+  height: 100%;
+  position: relative;
+  padding-bottom: 80px; /* Space for floating action button */
+}
+
+.menu-management-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.menu-management-content {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .menu-management-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Add Item Form */
+.add-item-card {
+  padding: 1.5rem;
+}
+
+.add-item-card h2,
+.items-list-card h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 1.25rem;
+}
+
+.add-item-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  background: rgba(232, 65, 24, 0.1);
+  color: var(--primary);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.form-success {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  background: rgba(76, 209, 55, 0.1);
+  color: #27ae60;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-group label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.form-group input,
+.form-group select {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  outline: none;
+  background: white;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: var(--primary);
+}
+
+.helper-text {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.submit-btn {
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  font-weight: 600;
+}
+
+/* Items List Card */
+.items-list-card {
+  padding: 1.5rem;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.items-table-container {
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+
+.empty-msg {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.menu-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.menu-items-table th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.menu-items-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+
+.menu-items-table tr:last-child td {
+  border-bottom: none;
+}
+
+.menu-items-table tr.item-disabled td {
+  opacity: 0.6;
+}
+
+.table-dish-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.dish-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background-size: cover;
+  background-position: center;
+  border: 1px solid var(--border-color);
+}
+
+.dish-name {
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.dish-category-badge {
+  background: var(--bg-color);
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.dish-price {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.status-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.status-toggle-btn.enabled {
+  color: var(--success);
+}
+
+.status-toggle-btn.disabled {
+  color: var(--text-muted);
+}
+
+.status-toggle-btn:hover {
+  background: var(--bg-color);
+}
+
+.delete-dish-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.4rem;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.delete-dish-btn:hover {
+  background: rgba(232, 65, 24, 0.1);
+  color: var(--primary);
+}
+
+.dish-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.dish-mobile-category {
+  display: none;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  background: var(--bg-color);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  width: fit-content;
+}
+
+@media (max-width: 600px) {
+  /* Merge category into dish details column on mobile screen sizes */
+  .dish-mobile-category {
+    display: inline-block;
+  }
+  
+  /* Hide the separate category header and category column */
+  .menu-items-table th:nth-child(2),
+  .menu-items-table td:nth-child(2) {
+    display: none !important;
+  }
+  
+  /* Hide text in status button, only keeping Lucide toggle icon */
+  .status-text {
+    display: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .menu-items-table th, 
+  .menu-items-table td {
+    padding: 0.5rem 0.6rem !important;
+    font-size: 0.8rem !important;
+  }
+  
+  .dish-img {
+    width: 32px !important;
+    height: 32px !important;
+  }
+  
+  .delete-dish-btn {
+    padding: 0.25rem !important;
+  }
+}

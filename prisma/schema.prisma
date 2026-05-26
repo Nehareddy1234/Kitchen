@@ -1,0 +1,95 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+/**
+ * ---------- Core tables ----------
+ */
+
+model Table {
+  id       Int    @id @default(autoincrement())
+  name     String
+  capacity Int
+  status   String // available | occupied | reserved
+
+  orders Order[]
+}
+
+model Order {
+  id String @id @default(uuid())
+
+  tableId Int?
+  table   Table? @relation(fields: [tableId], references: [id])
+
+  items OrderItem[]
+
+  total  Int
+  status String // Preparing | Ready | Paid
+
+  createdAt DateTime  @default(now())
+  paidAt    DateTime?
+}
+
+model OrderItem {
+  id Int @id @default(autoincrement())
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id])
+
+  menuItemId Int
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+
+  quantity Int
+
+  addOns Json? // { roti: 1, curry: -1 }
+}
+
+/**
+ * ---------- Menu ----------
+ */
+
+model MenuItem {
+  id Int @id @default(autoincrement())
+
+  name     String
+  category String
+  price    Int
+  imageUrl String?
+
+  enabled Boolean @default(true)
+
+  orders OrderItem[]
+}
+
+/**
+ * ---------- Grocery ----------
+ */
+
+model GroceryItem {
+  id Int @id @default(autoincrement())
+
+  name     String
+  quantity Float
+  unit     String
+
+  purchased Boolean @default(false)
+}
+
+/**
+ * ---------- Store (optional) ----------
+ */
+
+model StoreProduct {
+  id String @id
+
+  name     String
+  category String
+  price    Int
+  stock    Int
+  imageUrl String?
+}
