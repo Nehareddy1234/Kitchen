@@ -1,4 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
+import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 // Helper to collect request body as JSON
@@ -24,7 +24,7 @@ function getJsonBody(req) {
  * Vercel serverless function entry point.
  * Handles CRUD for /api/menu, /api/tables, /api/orders, /api/grocery.
  */
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   const url = req.url || '';
   const method = req.method;
 
