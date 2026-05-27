@@ -1,222 +1,185 @@
-import Fastify from 'fastify';
-import { createClient } from '@supabase/supabase-js';
-import { PrismaClient } from '@prisma/client';
-import dotenv from 'dotenv';
-
-dotenv.config();
-
-const fastify = Fastify({ logger: true });
+const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_ANON_KEY || '';
-const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
-
-// Temporary basic auth hook (you can expand this to use Supabase tokens)
-fastify.addHook('preHandler', async (req, reply) => {
-  // In a real production app, uncomment this to enforce token auth
-  /*
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return reply.code(401).send({ error: 'Missing token' });
-
-  if (supabase) {
-    const { data, error } = await supabase.auth.getUser(token);
-    if (error) return reply.code(401).send({ error: 'Invalid token' });
-    req.user = data.user;
-  }
-  */
-});
-
-// --- Menu API ---
-fastify.get('/api/menu', async (req, reply) => {
-  const items = await prisma.menuItem.findMany();
-  return items;
-});
-
-fastify.post('/api/menu', async (req, reply) => {
-  const { name, category, price, image } = req.body;
-  const item = await prisma.menuItem.create({
-    data: { 
-      name, 
-      category, 
-      price: Math.round(Number(price)), 
-      image 
-    }
-  });
-  return item;
-});
-
-fastify.put('/api/menu/:id', async (req, reply) => {
-  const { id } = req.params;
-  const { name, category, price, image, enabled } = req.body;
-  
-  const updateData = {};
-  if (name !== undefined) updateData.name = name;
-  if (category !== undefined) updateData.category = category;
-  if (price !== undefined) updateData.price = Math.round(Number(price));
-  if (image !== undefined) updateData.image = image;
-  if (enabled !== undefined) updateData.enabled = enabled;
-
-  const item = await prisma.menuItem.update({
-    where: { id: Number(id) },
-    data: updateData,
-  });
-  return item;
-});
-
-fastify.delete('/api/menu/:id', async (req, reply) => {
-  const { id } = req.params;
-  await prisma.menuItem.delete({
-    where: { id: Number(id) }
-  });
-  return { message: 'Menu item deleted' };
-});
-
-// --- Tables API ---
-fastify.get('/api/tables', async (req, reply) => {
-  const tables = await prisma.table.findMany({ include: { order: { include: { items: { include: { menuItem: true } } } } } });
-  return tables;
-});
-
-fastify.put('/api/tables/:id', async (req, reply) => {
-  const { id } = req.params;
-  const { status, orderId } = req.body;
-  
-  const updateData = { status };
-  if (orderId !== undefined) updateData.orderId = orderId;
-
-  const table = await prisma.table.update({
-    where: { id: Number(id) },
-    data: updateData,
-  });
-  return table;
-});
-
-// --- Orders API ---
-fastify.get('/api/orders', async (req, reply) => {
-  const orders = await prisma.order.findMany({
-    include: { items: { include: { menuItem: true } } },
-    orderBy: { createdAt: 'desc' }
-  });
-  return orders;
-});
-
-fastify.post('/api/orders', async (req, reply) => {
-  const { tableId, items } = req.body;
-
-  const total = await prisma.$transaction(async (tx) => {
-    const order = await tx.order.create({
-      data: {
-        table: tableId ? { connect: { id: tableId } } : undefined,
-        total: 0,
-        status: 'Preparing',
-        items: {
-          create: items.map((i) => ({
-            menuItemId: i.menuItemId,
-            quantity: i.quantity,
-            addOns: i.addOns || {},
-          })),
-        },
-      },
-      include: { items: true },
+// Helper to collect request body as JSON
+function getJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    let data = '';
+    req.on('data', chunk => {
+      data += chunk;
     });
-
-    const fullItems = await tx.orderItem.findMany({
-      where: { orderId: order.id },
-      include: { menuItem: true },
+    req.on('end', () => {
+      if (!data) return resolve({});
+      try {
+        resolve(JSON.parse(data));
+      } catch (e) {
+        reject(e);
+      }
     });
-
-    const computed = fullItems.reduce((sum, oi) => {
-      const addOns = oi.addOns || {};
-      const addOnPrice = ((addOns.roti || 0) * 15) + ((addOns.curry || 0) * 40);
-      return sum + ((oi.menuItem.price + addOnPrice) * oi.quantity);
-    }, 0);
-
-    const totalWithTax = Math.round(computed * 1.05);
-
-    await tx.order.update({
-      where: { id: order.id },
-      data: { total: totalWithTax },
-    });
-
-    if (tableId) {
-      await tx.table.update({
-        where: { id: tableId },
-        data: { status: 'occupied', orderId: order.id }
-      });
-    }
-
-    return totalWithTax;
+    req.on('error', err => reject(err));
   });
-
-  return { message: 'Order placed', total };
-});
-
-fastify.put('/api/orders/:id', async (req, reply) => {
-  const { id } = req.params;
-  const { status } = req.body;
-  
-  const order = await prisma.order.update({
-    where: { id },
-    data: { status, paidAt: status === 'Paid' ? new Date() : null }
-  });
-
-  if (status === 'Paid' && order.tableId) {
-    await prisma.table.update({
-      where: { id: order.tableId },
-      data: { status: 'available', orderId: null }
-    });
-  }
-  
-  return order;
-});
-
-// --- Grocery API ---
-fastify.get('/api/grocery', async (req, reply) => {
-  return await prisma.groceryItem.findMany();
-});
-
-fastify.post('/api/grocery', async (req, reply) => {
-  const { name, quantity, unit } = req.body;
-  return await prisma.groceryItem.create({ data: { name, quantity, unit } });
-});
-
-fastify.put('/api/grocery/:id', async (req, reply) => {
-  const { id } = req.params;
-  const { purchased } = req.body;
-  return await prisma.groceryItem.update({
-    where: { id: Number(id) },
-    data: { purchased }
-  });
-});
-
-fastify.delete('/api/grocery/:id', async (req, reply) => {
-  const { id } = req.params;
-  await prisma.groceryItem.delete({
-    where: { id: Number(id) }
-  });
-  return { message: 'Grocery item deleted' };
-});
-
-export default async function handler(req, res) {
-  await fastify.ready();
-  fastify.server.emit('request', req, res);
 }
 
-// Standalone local development server support
-const isDirectRun = process.argv[1] && (
-  process.argv[1].endsWith('index.js') || 
-  process.argv[1].includes('api\\index.js') || 
-  process.argv[1].includes('api/index.js')
-);
+/**
+ * Vercel serverless function entry point.
+ * Handles CRUD for /api/menu, /api/tables, /api/orders, /api/grocery.
+ */
+module.exports = async (req, res) => {
+  const url = req.url || '';
+  const method = req.method;
 
-if (isDirectRun) {
-  const PORT = process.env.PORT || 3000;
-  fastify.listen({ port: parseInt(PORT), host: '0.0.0.0' }, (err, address) => {
-    if (err) {
-      fastify.log.error(err);
-      process.exit(1);
+  // Normalize path (remove query string)
+  const path = url.split('?')[0];
+
+  // ---------- MENU ----------
+  if (path.startsWith('/api/menu')) {
+    // /api/menu or /api/menu/:id
+    const idPart = path.replace('/api/menu', '').replace(/^\//, '');
+    const id = idPart ? parseInt(idPart) : null;
+    if (method === 'GET') {
+      if (id) {
+        const item = await prisma.menuItem.findUnique({ where: { id } });
+        res.writeHead(item ? 200 : 404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(item || { error: 'Not found' }));
+      } else {
+        const items = await prisma.menuItem.findMany();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(items));
+      }
+      return;
     }
-    console.log(`\n🚀 Neha's Kitchen local API server running at: ${address}\n`);
-  });
-}
+    if (method === 'POST') {
+      const body = await getJsonBody(req);
+      const created = await prisma.menuItem.create({ data: body });
+      res.writeHead(201, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(created));
+      return;
+    }
+    if (method === 'PUT' && id) {
+      const body = await getJsonBody(req);
+      const updated = await prisma.menuItem.update({ where: { id }, data: body });
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(updated));
+      return;
+    }
+    if (method === 'DELETE' && id) {
+      await prisma.menuItem.delete({ where: { id } });
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+    res.writeHead(405);
+    return res.end();
+  }
+
+  // ---------- TABLES ----------
+  if (path.startsWith('/api/tables')) {
+    const idPart = path.replace('/api/tables', '').replace(/^\//, '');
+    const id = idPart ? parseInt(idPart) : null;
+    if (method === 'GET') {
+      if (id) {
+        const tbl = await prisma.table.findUnique({ where: { id }, include: { orders: true } });
+        res.writeHead(tbl ? 200 : 404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(tbl || { error: 'Not found' }));
+      } else {
+        const tables = await prisma.table.findMany({ include: { orders: true } });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(tables));
+      }
+      return;
+    }
+    if (method === 'PUT' && id) {
+      const body = await getJsonBody(req);
+      const updated = await prisma.table.update({ where: { id }, data: body });
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(updated));
+      return;
+    }
+    res.writeHead(405);
+    return res.end();
+  }
+
+  // ---------- GROCERY ----------
+  if (path.startsWith('/api/grocery')) {
+    const idPart = path.replace('/api/grocery', '').replace(/^\//, '');
+    const id = idPart ? parseInt(idPart) : null;
+    if (method === 'GET') {
+      if (id) {
+        const item = await prisma.groceryItem.findUnique({ where: { id } });
+        res.writeHead(item ? 200 : 404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(item || { error: 'Not found' }));
+      } else {
+        const items = await prisma.groceryItem.findMany();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(items));
+      }
+      return;
+    }
+    if (method === 'POST') {
+      const body = await getJsonBody(req);
+      const created = await prisma.groceryItem.create({ data: body });
+      res.writeHead(201, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(created));
+      return;
+    }
+    if (method === 'PUT' && id) {
+      const body = await getJsonBody(req);
+      const updated = await prisma.groceryItem.update({ where: { id }, data: body });
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(updated));
+      return;
+    }
+    if (method === 'DELETE' && id) {
+      await prisma.groceryItem.delete({ where: { id } });
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+    res.writeHead(405);
+    return res.end();
+  }
+
+  // ---------- ORDERS ----------
+  if (path.startsWith('/api/orders')) {
+    const idPart = path.replace('/api/orders', '').replace(/^\//, '');
+    const id = idPart ? idPart : null; // id may be uuid string
+    if (method === 'GET') {
+      if (id) {
+        const order = await prisma.order.findUnique({ where: { id } });
+        res.writeHead(order ? 200 : 404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(order || { error: 'Not found' }));
+      } else {
+        const orders = await prisma.order.findMany();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(orders));
+      }
+      return;
+    }
+    if (method === 'POST') {
+      const body = await getJsonBody(req);
+      const created = await prisma.order.create({ data: body });
+      res.writeHead(201, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(created));
+      return;
+    }
+    if (method === 'PUT' && id) {
+      const body = await getJsonBody(req);
+      const updated = await prisma.order.update({ where: { id }, data: body });
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(updated));
+      return;
+    }
+    if (method === 'DELETE' && id) {
+      await prisma.order.delete({ where: { id } });
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+    res.writeHead(405);
+    return res.end();
+  }
+
+  // If none matched
+  res.writeHead(404, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ error: 'Endpoint not found' }));
+};

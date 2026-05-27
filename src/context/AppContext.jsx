@@ -40,7 +40,11 @@ export function AppProvider({ children }) {
         ]);
 
         if (menuRes && menuRes.ok) setMenuItems(await menuRes.json());
-        if (tablesRes && tablesRes.ok) setTables(await tablesRes.json());
+        if (tablesRes && tablesRes.ok) {
+          const rawTables = await tablesRes.json();
+          // Map `orders[]` array to `order` (latest active) for UI compatibility
+          setTables(rawTables.map(t => ({ ...t, order: t.orders?.[0] || null })));
+        }
         if (ordersRes && ordersRes.ok) {
           const allOrders = await ordersRes.json();
           setActiveOrders(allOrders.filter(o => o.status !== 'Paid'));
@@ -71,11 +75,33 @@ export function AppProvider({ children }) {
   const toggleSidebarOpen = () => setSidebarOpen(prev => !prev);
   const closeSidebar = () => setSidebarOpen(false);
 
+  // Refresh all data from the backend
+  const refreshData = async () => {
+    try {
+      const [menuRes, tablesRes, ordersRes, groceryRes] = await Promise.all([
+        fetch(`${API_BASE}/api/menu`).catch(() => null),
+        fetch(`${API_BASE}/api/tables`).catch(() => null),
+        fetch(`${API_BASE}/api/orders`).catch(() => null),
+        fetch(`${API_BASE}/api/grocery`).catch(() => null)
+      ]);
+      if (menuRes && menuRes.ok) setMenuItems(await menuRes.json());
+      if (tablesRes && tablesRes.ok) {
+        const rawTables = await tablesRes.json();
+        setTables(rawTables.map(t => ({ ...t, order: t.orders?.[0] || null })));
+      }
+      if (ordersRes && ordersRes.ok) {
+        const allOrders = await ordersRes.json();
+        setActiveOrders(allOrders.filter(o => o.status !== 'Paid'));
+        setOrderHistory(allOrders.filter(o => o.status === 'Paid'));
+      }
+      if (groceryRes && groceryRes.ok) setGroceryItems(await groceryRes.json());
+    } catch (err) {
+      console.error('Refresh failed', err);
+    }
+  };
+
   // Place a new order
   const placeOrder = async (cartItems, tableId) => {
-    // Optimistic UI Update (Mock IDs)
-    const mockOrderId = `#ORD-${Date.now()}`;
-    
     try {
       const res = await fetch(`${API_BASE}/api/orders`, {
         method: 'POST',
@@ -86,12 +112,19 @@ export function AppProvider({ children }) {
         })
       });
       if (res.ok) {
-        // Refresh data ideally, or rely on Realtime
+        const newOrder = await res.json();
+        setActiveOrders(prev => [newOrder, ...prev]);
+        if (tableId) {
+          setTables(prev => prev.map(t =>
+            t.id === tableId ? { ...t, status: 'occupied', order: newOrder } : t
+          ));
+        }
+        return newOrder.id;
       }
     } catch (e) {
       console.error("Failed to place order via API", e);
     }
-    return mockOrderId;
+    return `#ORD-${Date.now()}`;
   };
 
   const updateOrder = (orderId, cartItems, tableId) => {
