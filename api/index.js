@@ -42,7 +42,11 @@ export default async function handler(req, res) {
         res.writeHead(item ? 200 : 404, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(item || { error: 'Not found' }));
       } else {
-        const items = await prisma.menuItem.findMany();
+        const items = await prisma.menuItem.findMany({
+          where: {
+            enabled: true
+          }
+        });
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(items));
       }
@@ -63,7 +67,12 @@ export default async function handler(req, res) {
       return;
     }
     if (method === 'DELETE' && id) {
-      await prisma.menuItem.delete({ where: { id } });
+      await prisma.menuItem.update({
+        where: { id },
+        data: {
+          enabled: false
+        }
+      });
       res.writeHead(204);
       res.end();
       return;
