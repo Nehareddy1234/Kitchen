@@ -34,11 +34,42 @@ fastify.get('/api/menu', async (req, reply) => {
 });
 
 fastify.post('/api/menu', async (req, reply) => {
-  const { name, category, price, imageUrl } = req.body;
+  const { name, category, price, image } = req.body;
   const item = await prisma.menuItem.create({
-    data: { name, category, price, imageUrl }
+    data: { 
+      name, 
+      category, 
+      price: Math.round(Number(price)), 
+      image 
+    }
   });
   return item;
+});
+
+fastify.put('/api/menu/:id', async (req, reply) => {
+  const { id } = req.params;
+  const { name, category, price, image, enabled } = req.body;
+  
+  const updateData = {};
+  if (name !== undefined) updateData.name = name;
+  if (category !== undefined) updateData.category = category;
+  if (price !== undefined) updateData.price = Math.round(Number(price));
+  if (image !== undefined) updateData.image = image;
+  if (enabled !== undefined) updateData.enabled = enabled;
+
+  const item = await prisma.menuItem.update({
+    where: { id: Number(id) },
+    data: updateData,
+  });
+  return item;
+});
+
+fastify.delete('/api/menu/:id', async (req, reply) => {
+  const { id } = req.params;
+  await prisma.menuItem.delete({
+    where: { id: Number(id) }
+  });
+  return { message: 'Menu item deleted' };
 });
 
 // --- Tables API ---
@@ -159,7 +190,33 @@ fastify.put('/api/grocery/:id', async (req, reply) => {
   });
 });
 
+fastify.delete('/api/grocery/:id', async (req, reply) => {
+  const { id } = req.params;
+  await prisma.groceryItem.delete({
+    where: { id: Number(id) }
+  });
+  return { message: 'Grocery item deleted' };
+});
+
 export default async function handler(req, res) {
   await fastify.ready();
   fastify.server.emit('request', req, res);
+}
+
+// Standalone local development server support
+const isDirectRun = process.argv[1] && (
+  process.argv[1].endsWith('index.js') || 
+  process.argv[1].includes('api\\index.js') || 
+  process.argv[1].includes('api/index.js')
+);
+
+if (isDirectRun) {
+  const PORT = process.env.PORT || 3000;
+  fastify.listen({ port: parseInt(PORT), host: '0.0.0.0' }, (err, address) => {
+    if (err) {
+      fastify.log.error(err);
+      process.exit(1);
+    }
+    console.log(`\n🚀 Neha's Kitchen local API server running at: ${address}\n`);
+  });
 }

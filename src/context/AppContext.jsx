@@ -2,6 +2,10 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AppContext = createContext(null);
 
+// Use relative URLs on Vercel (website), full URL in Capacitor (APK)
+const isCapacitor = typeof window !== 'undefined' && window.Capacitor !== undefined;
+const API_BASE = isCapacitor ? 'https://nehaskitchen.vercel.app' : '';
+
 const initialTables = [
   { id: 1, name: 'T1', capacity: 4, status: 'available', order: null },
   { id: 2, name: 'T2', capacity: 2, status: 'available', order: null },
@@ -29,10 +33,10 @@ export function AppProvider({ children }) {
     const fetchBackendData = async () => {
       try {
         const [menuRes, tablesRes, ordersRes, groceryRes] = await Promise.all([
-          fetch('/api/menu').catch(() => null),
-          fetch('/api/tables').catch(() => null),
-          fetch('/api/orders').catch(() => null),
-          fetch('/api/grocery').catch(() => null)
+          fetch(`${API_BASE}/api/menu`).catch(() => null),
+          fetch(`${API_BASE}/api/tables`).catch(() => null),
+          fetch(`${API_BASE}/api/orders`).catch(() => null),
+          fetch(`${API_BASE}/api/grocery`).catch(() => null)
         ]);
 
         if (menuRes && menuRes.ok) setMenuItems(await menuRes.json());
@@ -73,7 +77,7 @@ export function AppProvider({ children }) {
     const mockOrderId = `#ORD-${Date.now()}`;
     
     try {
-      const res = await fetch('/api/orders', {
+      const res = await fetch(`${API_BASE}/api/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -101,7 +105,7 @@ export function AppProvider({ children }) {
   const markOrderReady = async (orderId) => {
     setActiveOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'Ready' } : o));
     try {
-      await fetch(`/api/orders/${orderId}`, {
+      await fetch(`${API_BASE}/api/orders/${orderId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'Ready' })
@@ -117,7 +121,7 @@ export function AppProvider({ children }) {
       setTables(prev => prev.map(t => t.order?.id === orderId ? { ...t, status: 'available', order: null } : t));
       
       try {
-        await fetch(`/api/orders/${orderId}`, {
+        await fetch(`${API_BASE}/api/orders/${orderId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: 'Paid' })
@@ -134,7 +138,7 @@ export function AppProvider({ children }) {
   const updateTableStatus = async (tableId, newStatus) => {
     setTables(prev => prev.map(t => t.id === tableId ? { ...t, status: newStatus } : t));
     try {
-      await fetch(`/api/tables/${tableId}`, {
+      await fetch(`${API_BASE}/api/tables/${tableId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
@@ -143,33 +147,66 @@ export function AppProvider({ children }) {
   };
 
   const addMenuItem = async (item) => {
-    setMenuItems(prev => [...prev, { ...item, id: Date.now() }]);
+    const tempId = Date.now();
+    setMenuItems(prev => [...prev, { ...item, id: tempId }]);
     try {
-      await fetch('/api/menu', {
+      const res = await fetch(`${API_BASE}/api/menu`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(item)
       });
-    } catch (e) {}
+      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+      const savedItem = await res.json();
+      setMenuItems(prev => prev.map(i => i.id === tempId ? savedItem : i));
+    } catch (e) {
+      console.error("Failed to save menu item to database. Keeping local state.", e);
+    }
   };
 
-  const removeMenuItem = (itemId) => {
+  const removeMenuItem = async (itemId) => {
     setMenuItems(prev => prev.filter(item => item.id !== itemId));
+    try {
+      const res = await fetch(`${API_BASE}/api/menu/${itemId}`, {
+        method: 'DELETE'
+      });
+      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    } catch (e) {
+      console.error("Failed to delete menu item from database.", e);
+    }
   };
 
-  const toggleMenuItemEnabled = (itemId) => {
-    setMenuItems(prev => prev.map(item => item.id === itemId ? { ...item, enabled: !item.enabled } : item));
+  const toggleMenuItemEnabled = async (itemId) => {
+    const item = menuItems.find(i => i.id === itemId);
+    if (!item) return;
+    const nextEnabled = !item.enabled;
+    setMenuItems(prev => prev.map(i => i.id === itemId ? { ...i, enabled: nextEnabled } : i));
+    try {
+      const res = await fetch(`${API_BASE}/api/menu/${itemId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: nextEnabled })
+      });
+      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    } catch (e) {
+      console.error("Failed to toggle menu item status in database.", e);
+    }
   };
 
   const addGroceryItem = async (name, quantity, unit) => {
-    setGroceryItems(prev => [...prev, { id: Date.now(), name, quantity, unit, purchased: false }]);
+    const tempId = Date.now();
+    setGroceryItems(prev => [...prev, { id: tempId, name, quantity, unit, purchased: false }]);
     try {
-      await fetch('/api/grocery', {
+      const res = await fetch(`${API_BASE}/api/grocery`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, quantity, unit })
       });
-    } catch (e) {}
+      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+      const savedItem = await res.json();
+      setGroceryItems(prev => prev.map(i => i.id === tempId ? savedItem : i));
+    } catch (e) {
+      console.error("Failed to save grocery item to database.", e);
+    }
   };
 
   const toggleGroceryItem = async (itemId) => {
@@ -177,7 +214,7 @@ export function AppProvider({ children }) {
     if (item) {
       setGroceryItems(prev => prev.map(i => i.id === itemId ? { ...i, purchased: !i.purchased } : i));
       try {
-        await fetch(`/api/grocery/${itemId}`, {
+        await fetch(`${API_BASE}/api/grocery/${itemId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ purchased: !item.purchased })
@@ -186,8 +223,16 @@ export function AppProvider({ children }) {
     }
   };
 
-  const removeGroceryItem = (itemId) => {
+  const removeGroceryItem = async (itemId) => {
     setGroceryItems(prev => prev.filter(item => item.id !== itemId));
+    try {
+      const res = await fetch(`${API_BASE}/api/grocery/${itemId}`, {
+        method: 'DELETE'
+      });
+      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    } catch (e) {
+      console.error("Failed to delete grocery item from database.", e);
+    }
   };
 
   const clearPurchasedGrocery = () => {
