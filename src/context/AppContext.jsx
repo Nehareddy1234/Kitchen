@@ -12,10 +12,8 @@ const initialTables = [
   { id: 3, name: 'T3', capacity: 6, status: 'available', order: null },
 ];
 
-const initialMenuItems = [
-  { id: 1, name: 'Deluxe Veg Thali', category: 'Combos/Thali', price: 250, image: '', enabled: true },
-  { id: 2, name: 'Paneer Butter Masala', category: 'Curries', price: 180, image: '', enabled: true },
-];
+// No hardcoded fallback — always load from the database
+const initialMenuItems = [];
 
 export function AppProvider({ children }) {
   const [appMode, setAppMode] = useState('restaurant'); // 'restaurant' | 'grocery'
@@ -181,30 +179,46 @@ export function AppProvider({ children }) {
 
   const addMenuItem = async (item) => {
     const tempId = Date.now();
-    setMenuItems(prev => [...prev, { ...item, id: tempId }]);
+    // Optimistic update
+    setMenuItems(prev => [...prev, { ...item, id: tempId, enabled: true }]);
     try {
       const res = await fetch(`${API_BASE}/api/menu`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(item)
       });
-      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.details || errBody.error || `HTTP ${res.status}`);
+      }
       const savedItem = await res.json();
+      // Replace temp item with real DB item (gets real id)
       setMenuItems(prev => prev.map(i => i.id === tempId ? savedItem : i));
     } catch (e) {
-      console.error("Failed to save menu item to database. Keeping local state.", e);
+      console.error('addMenuItem failed — rolling back:', e.message);
+      // Rollback optimistic update
+      setMenuItems(prev => prev.filter(i => i.id !== tempId));
+      throw e; // re-throw so the UI can show an error
     }
   };
 
   const removeMenuItem = async (itemId) => {
+    const snapshot = menuItems.find(i => i.id === itemId);
+    // Optimistic update
     setMenuItems(prev => prev.filter(item => item.id !== itemId));
     try {
       const res = await fetch(`${API_BASE}/api/menu/${itemId}`, {
         method: 'DELETE'
       });
-      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.details || errBody.error || `HTTP ${res.status}`);
+      }
     } catch (e) {
-      console.error("Failed to delete menu item from database.", e);
+      console.error('removeMenuItem failed — rolling back:', e.message);
+      // Rollback: put the item back
+      if (snapshot) setMenuItems(prev => [...prev, snapshot]);
+      throw e;
     }
   };
 
@@ -212,6 +226,7 @@ export function AppProvider({ children }) {
     const item = menuItems.find(i => i.id === itemId);
     if (!item) return;
     const nextEnabled = !item.enabled;
+    // Optimistic update
     setMenuItems(prev => prev.map(i => i.id === itemId ? { ...i, enabled: nextEnabled } : i));
     try {
       const res = await fetch(`${API_BASE}/api/menu/${itemId}`, {
@@ -219,9 +234,15 @@ export function AppProvider({ children }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enabled: nextEnabled })
       });
-      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.details || errBody.error || `HTTP ${res.status}`);
+      }
     } catch (e) {
-      console.error("Failed to toggle menu item status in database.", e);
+      console.error('toggleMenuItemEnabled failed — rolling back:', e.message);
+      // Rollback
+      setMenuItems(prev => prev.map(i => i.id === itemId ? { ...i, enabled: item.enabled } : i));
+      throw e;
     }
   };
 

@@ -15,7 +15,7 @@ export default function Menu() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -33,18 +33,21 @@ export default function Menu() {
     // Default image if none provided
     const imageUrl = image.trim() || 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&q=80&w=200&h=200';
 
-    addMenuItem({
-      name: name.trim(),
-      category,
-      price: parseFloat(price),
-      image: imageUrl
-    });
-
-    setName('');
-    setPrice('');
-    setImage('');
-    setSuccess('Menu item added successfully!');
-    setTimeout(() => setSuccess(''), 3000);
+    try {
+      await addMenuItem({
+        name: name.trim(),
+        category,
+        price: parseFloat(price),
+        image: imageUrl
+      });
+      setName('');
+      setPrice('');
+      setImage('');
+      setSuccess('Menu item added successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(`Failed to add item: ${err.message}`);
+    }
   };
 
   return (
@@ -190,7 +193,13 @@ export default function Menu() {
                       <td>
                         <button
                           className="delete-dish-btn"
-                          onClick={() => removeMenuItem(item.id)}
+                          onClick={async () => {
+                            try {
+                              await removeMenuItem(item.id);
+                            } catch (err) {
+                              setError(`Failed to remove item: ${err.message}`);
+                            }
+                          }}
                           title="Remove from Menu"
                         >
                           <Trash2 size={16} />
