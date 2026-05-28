@@ -225,7 +225,7 @@ export default function POS() {
         <div className="menu-grid">
           {filteredItems.map(item => (
             <div key={item.id} className="menu-card card" onClick={() => addToCart(item)}>
-              <div className="menu-card-image" style={{ backgroundImage: `url(${item.image})` }}>
+              <div className="menu-card-image" style={{ backgroundImage: `url("${item.image}"), url("https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&q=80&w=200&h=200")` }}>
                 {getCartQuantity(item.id) > 0 && (
                   <span className="menu-item-qty-badge">{getCartQuantity(item.id)}</span>
                 )}

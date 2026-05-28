@@ -158,7 +158,7 @@ export default function Menu() {
                     <tr key={item.id} className={item.enabled ? '' : 'item-disabled'}>
                       <td>
                         <div className="table-dish-info">
-                          <div className="dish-img" style={{ backgroundImage: `url(${item.image})` }}></div>
+                          <div className="dish-img" style={{ backgroundImage: `url("${item.image}"), url("https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&q=80&w=200&h=200")` }}></div>
                           <div className="dish-details">
                             <span className="dish-name">{item.name}</span>
                             <span className="dish-mobile-category">{item.category}</span>
