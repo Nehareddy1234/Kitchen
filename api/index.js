@@ -200,17 +200,24 @@
 import { PrismaClient } from '@prisma/client';
 
 /**
- * Prevent multiple Prisma instances in Vercel serverless
+ * Prevent multiple Prisma instances in Vercel serverless.
+ * Always store on globalThis so warm invocations reuse the
+ * same client and don't exhaust the PgBouncer connection pool.
  */
 const globalForPrisma = globalThis;
 
 export const prisma =
-  globalForPrisma.prisma ||
-  new PrismaClient();
+  globalForPrisma.prisma ??
+  new PrismaClient({
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL,
+      },
+    },
+  });
 
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma;
-}
+// Always cache — even in production (Vercel warm instances)
+globalForPrisma.prisma = prisma;
 
 /**
  * Helper to parse JSON body
@@ -583,5 +590,10 @@ export default async function handler(req, res) {
       error: 'Internal server error',
       details: error.message,
     });
+  } finally {
+    // Release the connection back to PgBouncer after every request.
+    // This is safe because the global singleton will reconnect on the
+    // next invocation without creating a new PrismaClient instance.
+    await prisma.$disconnect();
   }
 }
