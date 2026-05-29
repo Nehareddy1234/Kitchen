@@ -30,6 +30,8 @@ export default function History() {
 
   const totalRevenue = filteredByDate.reduce((sum, order) => sum + order.total, 0);
   const totalOrders = filteredByDate.length;
+  const cashTotal = filteredByDate.reduce((sum, order) => sum + (order.paymentMethod === 'Cash' ? order.total : 0), 0);
+  const upiTotal = filteredByDate.reduce((sum, order) => sum + (order.paymentMethod === 'UPI' ? order.total : 0), 0);
 
   const [showEODModal, setShowEODModal] = useState(false);
 
@@ -131,7 +133,7 @@ export default function History() {
                     <th>Table</th>
                     <th>Items Count</th>
                     <th>Total Bill</th>
-                    <th>Actions</th>
+                    <th>Payment</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -146,6 +148,7 @@ export default function History() {
                       </td>
                       <td><span className="table-badge">{order.table}</span></td>
                       <td>{order.itemList?.length || 0} items</td>
+                      <td>{order.paymentMethod || 'Cash'}</td>
                       <td><strong className="price-label">₹{order.total}</strong></td>
                       <td>
                         <button
@@ -174,8 +177,8 @@ export default function History() {
               </div>
               <div className="modal-body">
                 <div className="detail-row">
-                  <span>Status</span>
-                  <span className="status-paid-badge">Paid</span>
+                  <span>Payment Method</span>
+                  <span className="status-paid-badge">{selectedOrder.paymentMethod || 'Cash'}</span>
                 </div>
                 <div className="detail-row">
                   <span>Table/Type</span>
@@ -219,6 +222,14 @@ export default function History() {
                 <div className="detail-row">
                   <span>Total Revenue Collected</span>
                   <strong style={{ color: 'var(--success)', fontSize: '1.1rem' }}>₹{totalRevenue.toLocaleString()}</strong>
+                </div>
+                <div className="detail-row">
+                  <span>Total Cash Collected</span>
+                  <strong>₹{cashTotal.toLocaleString()}</strong>
+                </div>
+                <div className="detail-row">
+                  <span>Total UPI Collected</span>
+                  <strong>₹{upiTotal.toLocaleString()}</strong>
                 </div>
                 <div className="detail-row">
                   <span>Total Orders Processed</span>
