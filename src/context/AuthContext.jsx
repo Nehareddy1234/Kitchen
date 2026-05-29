@@ -55,6 +55,9 @@ const USERS = [
   },
 ];
 
+// In-memory fallback if localStorage is blocked
+let inMemoryCustomUsers = [];
+
 // ─────────────────────────────────────────────────────
 //  Role-based allowed nav paths
 // ─────────────────────────────────────────────────────
@@ -80,10 +83,18 @@ export function AuthProvider({ children }) {
   const getCustomUsers = () => {
     try {
       const saved = localStorage.getItem('nk_registered_users');
-      return saved ? JSON.parse(saved) : [];
+      return saved ? JSON.parse(saved) : inMemoryCustomUsers;
     } catch {
-      return [];
+      return inMemoryCustomUsers;
     }
+  };
+
+  const checkUsernameExists = (uname) => {
+    const trimmed = uname.trim().toLowerCase();
+    const existsInPredefined = USERS.some(u => u.username.toLowerCase() === trimmed);
+    const customUsers = getCustomUsers();
+    const existsInCustom = customUsers.some(u => u.username.toLowerCase() === trimmed);
+    return existsInPredefined || existsInCustom;
   };
 
   const login = (username, password) => {
@@ -105,7 +116,11 @@ export function AuthProvider({ children }) {
     if (user) {
       const { password: _pw, ...safeUser } = user;
       setCurrentUser(safeUser);
-      sessionStorage.setItem('rc_user', JSON.stringify(safeUser));
+      try {
+        sessionStorage.setItem('rc_user', JSON.stringify(safeUser));
+      } catch (e) {
+        console.warn("sessionStorage failed", e);
+      }
       return { success: true, user: safeUser };
     }
     return { success: false, error: 'Invalid username or password.' };
@@ -117,15 +132,7 @@ export function AuthProvider({ children }) {
       return { success: false, error: 'Username and password are required.' };
     }
 
-    const checkUsername = trimmedUsername.toLowerCase();
-
-    // Check predefined users
-    const existsInPredefined = USERS.some(u => u.username.toLowerCase() === checkUsername);
-    // Check custom registered users
-    const customUsers = getCustomUsers();
-    const existsInCustom = customUsers.some(u => u.username.toLowerCase() === checkUsername);
-
-    if (existsInPredefined || existsInCustom) {
+    if (checkUsernameExists(trimmedUsername)) {
       return { success: false, error: 'Username already taken.' };
     }
 
@@ -140,20 +147,34 @@ export function AuthProvider({ children }) {
       avatar: (displayName.trim() || trimmedUsername).slice(0, 2).toUpperCase()
     };
 
-    customUsers.push(newUser);
-    localStorage.setItem('nk_registered_users', JSON.stringify(customUsers));
+    const customUsers = [...getCustomUsers(), newUser];
+    
+    try {
+      localStorage.setItem('nk_registered_users', JSON.stringify(customUsers));
+    } catch (e) {
+      console.warn("localStorage failed, saving in memory", e);
+      inMemoryCustomUsers = customUsers;
+    }
 
     // Auto login after registration
     const { password: _pw, ...safeUser } = newUser;
     setCurrentUser(safeUser);
-    sessionStorage.setItem('rc_user', JSON.stringify(safeUser));
+    try {
+      sessionStorage.setItem('rc_user', JSON.stringify(safeUser));
+    } catch (e) {
+      console.warn("sessionStorage failed", e);
+    }
 
     return { success: true, user: safeUser };
   };
 
   const logout = () => {
     setCurrentUser(null);
-    sessionStorage.removeItem('rc_user');
+    try {
+      sessionStorage.removeItem('rc_user');
+    } catch (e) {
+      console.warn("sessionStorage clear failed", e);
+    }
   };
 
   const hasAccess = (path) => {
@@ -163,7 +184,15 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ currentUser, login, register, logout, hasAccess, employees: USERS }}>
+    <AuthContext.Provider value={{ 
+      currentUser, 
+      login, 
+      register, 
+      logout, 
+      hasAccess, 
+      checkUsernameExists,
+      employees: USERS 
+    }}>
       {children}
     </AuthContext.Provider>
   );

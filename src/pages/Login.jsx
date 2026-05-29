@@ -11,7 +11,7 @@ const ROLE_LABELS = {
 };
 
 export default function Login() {
-  const { login, register } = useAuth();
+  const { login, register, checkUsernameExists } = useAuth();
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -30,13 +30,6 @@ export default function Login() {
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const checkUsernameExists = (uname) => {
-    const trimmed = uname.trim().toLowerCase();
-    const customUsers = JSON.parse(localStorage.getItem('nk_registered_users') || '[]');
-    const predefinedUsers = ['admin', 'accounts', 'waiter1', 'waiter2', 'table1', 'table2'];
-    return predefinedUsers.includes(trimmed) || customUsers.some(u => u.username.toLowerCase() === trimmed);
-  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
