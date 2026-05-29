@@ -71,40 +71,24 @@ export default function Orders() {
                     </button>
                   )}
                   {order.status === 'Ready' && (
-                  <>
-                    <button className="btn btn-primary" onClick={() => setDialogOrderId(order.id)}>
-                      <Printer size={15} /> Bill & Close
-                    </button>
-                    {dialogOrderId === order.id && (
-                      <div className="dialog-overlay">
-                        <div className="dialog">
-                          <h3>Select payment method</h3>
-                          <select
-                            value={paymentMethods[order.id] || 'Cash'}
-                            onChange={e => setPaymentMethods(prev => ({ ...prev, [order.id]: e.target.value }))}
-                            className="payment-select"
-                          >
-                            <option value="Cash">Cash</option>
-                            <option value="UPI">UPI</option>
-                          </select>
-                          <div className="dialog-actions" style={{ marginTop: '0.5rem' }}>
-                            <button
-                              className="btn btn-primary"
-                              onClick={() => {
-                                closeOrder(order.id, paymentMethods[order.id] || 'Cash');
-                                setDialogOrderId(null);
-                              }}
-                            >
-                              Confirm
+                      <>
+                        <button className="btn btn-primary" onClick={() => setDialogOrderId(order.id)}>
+                          <Printer size={15} /> Bill & Close
+                        </button>
+                        {dialogOrderId === order.id && (
+                          <div className="payment-dialog">
+                            <button className="btn btn-primary" onClick={() => { closeOrder(order.id, 'Cash'); setDialogOrderId(null); }}>
+                              Cash
+                            </button>
+                            <button className="btn btn-primary" onClick={() => { closeOrder(order.id, 'UPI'); setDialogOrderId(null); }}>
+                              UPI
                             </button>
                             <button className="btn btn-outline" onClick={() => setDialogOrderId(null)}>
                               Cancel
                             </button>
                           </div>
-                        </div>
-                      </div>
-                    )}
-                  </>
+                        )}
+                      </>
                 )}
                 </div>
               </div>
