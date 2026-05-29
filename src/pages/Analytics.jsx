@@ -62,7 +62,7 @@ export default function Analytics() {
     // Count items sold on this day
     const itemSales = {};
     orders.forEach(order => {
-      order.itemList.forEach(itemStr => {
+      (order.itemList || []).forEach(itemStr => {
         const parts = itemStr.split(' x');
         const namePart = parts[0].replace(/\s*\([^)]+\)/g, '').trim();
         const qty = parseInt(parts[1] || '1', 10);
@@ -167,7 +167,7 @@ export default function Analytics() {
   let dineInOrders = 0;
 
   filteredHistory.forEach(order => {
-    if (order.table.toLowerCase().includes('takeaway')) {
+    if ((order.table || '').toLowerCase().includes('takeaway')) {
       takeawayRev += order.total;
       takeawayOrders += 1;
     } else {
@@ -202,7 +202,7 @@ export default function Analytics() {
   });
 
   filteredHistory.forEach(order => {
-    order.itemList.forEach(itemStr => {
+    (order.itemList || []).forEach(itemStr => {
       const parts = itemStr.split(' x');
       const namePart = parts[0].replace(/\s*\([^)]+\)/g, '').trim();
       const qty = parseInt(parts[1] || '1', 10);
@@ -307,7 +307,7 @@ export default function Analytics() {
     if (dayIndex === -1) dayIndex = 6; // Sunday
     const dayName = daysOfWeek[dayIndex];
     
-    order.itemList.forEach(itemStr => {
+    (order.itemList || []).forEach(itemStr => {
       const parts = itemStr.split(' x');
       const namePart = parts[0].replace(/\s*\([^)]+\)/g, '').trim();
       const qty = parseInt(parts[1] || '1', 10);

@@ -23,7 +23,7 @@ export default function History() {
 
   const filteredHistory = filteredByDate.filter(order => {
     const matchesId = order.id.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesTable = order.table.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesTable = (order.table || '').toLowerCase().includes(searchQuery.toLowerCase());
     return matchesId || matchesTable;
   });
 

@@ -36,7 +36,7 @@ export default function POS() {
         if (order) {
           // Reconstruct cart
           const reconstructedCart = [];
-          order.itemList.forEach(itemStr => {
+          (order.itemList || []).forEach(itemStr => {
             const match = itemStr.match(/(.+) x(\d+)$/);
             if (match) {
               const fullName = match[1];
