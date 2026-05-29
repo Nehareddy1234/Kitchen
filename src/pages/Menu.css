@@ -254,6 +254,24 @@
   color: var(--primary);
 }
 
+.edit-dish-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.4rem;
+  border-radius: 6px;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-dish-btn:hover {
+  background: rgba(9, 132, 227, 0.1);
+  color: #0984e3;
+}
+
 .dish-details {
   display: flex;
   flex-direction: column;

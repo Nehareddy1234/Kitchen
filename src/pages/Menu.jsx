@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, ToggleLeft, ToggleRight, Check, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, ToggleLeft, ToggleRight, Check, AlertCircle, Edit } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import './Menu.css';
 
 const CATEGORIES = ['Combos', 'Curries', 'Rotis', 'Rice', 'Drinks', 'Uggani', 'Idli'];
 
 export default function Menu() {
-  const { menuItems, addMenuItem, removeMenuItem, toggleMenuItemEnabled } = useApp();
+  const { menuItems, addMenuItem, removeMenuItem, toggleMenuItemEnabled, updateMenuItem } = useApp();
 
   const [name, setName] = useState('');
   const [category, setCategory] = useState(CATEGORIES[0]);
@@ -14,6 +14,27 @@ export default function Menu() {
   const [image, setImage] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [editingItem, setEditingItem] = useState(null);
+
+  const handleStartEdit = (item) => {
+    setEditingItem(item);
+    setName(item.name);
+    setCategory(item.category);
+    setPrice(String(item.price));
+    setImage(item.image || '');
+    setError('');
+    setSuccess('');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingItem(null);
+    setName('');
+    setCategory(CATEGORIES[0]);
+    setPrice('');
+    setImage('');
+    setError('');
+    setSuccess('');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,19 +55,30 @@ export default function Menu() {
     const imageUrl = image.trim() || 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&q=80&w=200&h=200';
 
     try {
-      await addMenuItem({
-        name: name.trim(),
-        category,
-        price: parseFloat(price),
-        image: imageUrl
-      });
+      if (editingItem) {
+        await updateMenuItem(editingItem.id, {
+          name: name.trim(),
+          category,
+          price: parseFloat(price),
+          image: imageUrl
+        });
+        setEditingItem(null);
+        setSuccess('Menu item updated successfully!');
+      } else {
+        await addMenuItem({
+          name: name.trim(),
+          category,
+          price: parseFloat(price),
+          image: imageUrl
+        });
+        setSuccess('Menu item added successfully!');
+      }
       setName('');
       setPrice('');
       setImage('');
-      setSuccess('Menu item added successfully!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(`Failed to add item: ${err.message}`);
+      setError(`Failed to save item: ${err.message}`);
     }
   };
 
@@ -62,7 +94,7 @@ export default function Menu() {
       <div className="menu-management-content">
         {/* Add Item Form */}
         <div className="add-item-card card">
-          <h2>Add New Dish</h2>
+          <h2>{editingItem ? 'Edit Dish' : 'Add New Dish'}</h2>
           <form onSubmit={handleSubmit} className="add-item-form">
             {error && (
               <div className="form-error">
@@ -130,9 +162,16 @@ export default function Menu() {
               <span className="helper-text">Leaves default placeholder if empty</span>
             </div>
 
-            <button type="submit" className="btn btn-primary submit-btn">
-              <Plus size={18} /> Add to Menu
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+              <button type="submit" className="btn btn-primary submit-btn" style={{ flex: 1, marginTop: 0 }}>
+                {editingItem ? <Check size={18} /> : <Plus size={18} />} {editingItem ? 'Save Changes' : 'Add to Menu'}
+              </button>
+              {editingItem && (
+                <button type="button" className="btn btn-outline" style={{ flex: 1 }} onClick={handleCancelEdit}>
+                  Cancel
+                </button>
+              )}
+            </div>
           </form>
         </div>
 
@@ -190,14 +229,23 @@ export default function Menu() {
                           )}
                         </button>
                       </td>
-                      <td>
+                      <td style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                        <button
+                          className="edit-dish-btn"
+                          onClick={() => handleStartEdit(item)}
+                          title="Edit Dish"
+                        >
+                          <Edit size={16} />
+                        </button>
                         <button
                           className="delete-dish-btn"
                           onClick={async () => {
-                            try {
-                              await removeMenuItem(item.id);
-                            } catch (err) {
-                              setError(`Failed to remove item: ${err.message}`);
+                            if (window.confirm(`Are you sure you want to delete ${item.name}?`)) {
+                              try {
+                                await removeMenuItem(item.id);
+                              } catch (err) {
+                                setError(`Failed to remove item: ${err.message}`);
+                              }
                             }
                           }}
                           title="Remove from Menu"

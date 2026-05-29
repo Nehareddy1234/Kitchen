@@ -112,7 +112,7 @@ export default function History() {
               <Search size={18} className="text-muted" />
               <input
                 type="text"
-                placeholder="Search by ID or Table..."
+                placeholder="Search by Order No. or Table..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -126,7 +126,7 @@ export default function History() {
               <table className="history-table">
                 <thead>
                   <tr>
-                    <th>Order ID</th>
+                    <th>Order No.</th>
                     <th>Date &amp; Time</th>
                     <th>Table</th>
                     <th>Items Count</th>

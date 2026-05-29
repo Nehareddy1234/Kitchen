@@ -300,6 +300,31 @@ export function AppProvider({ children }) {
     }
   };
 
+  const updateMenuItem = async (itemId, updatedItem) => {
+    const snapshot = menuItems.find(i => i.id === itemId);
+    if (!snapshot) return;
+    // Optimistic update
+    setMenuItems(prev => prev.map(i => i.id === itemId ? { ...i, ...updatedItem } : i));
+    try {
+      const res = await fetch(`${API_BASE}/api/menu/${itemId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedItem)
+      });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.details || errBody.error || `HTTP ${res.status}`);
+      }
+      const savedItem = await res.json();
+      setMenuItems(prev => prev.map(i => i.id === itemId ? savedItem : i));
+    } catch (e) {
+      console.error('updateMenuItem failed — rolling back:', e.message);
+      // Rollback
+      setMenuItems(prev => prev.map(i => i.id === itemId ? snapshot : i));
+      throw e;
+    }
+  };
+
   const addGroceryItem = async (name, quantity, unit) => {
     const tempId = Date.now();
     setGroceryItems(prev => [...prev, { id: tempId, name, quantity, unit, purchased: false }]);
@@ -365,7 +390,7 @@ export function AppProvider({ children }) {
       tables, activeOrders, orderHistory, menuItems, groceryItems, storeInventory, storeOrders,
       refreshData,
       placeOrder, updateOrder, updateOrderItemQuantity, markOrderReady, closeOrder, freeTable, updateTableStatus,
-      addMenuItem, removeMenuItem, toggleMenuItemEnabled,
+      addMenuItem, removeMenuItem, toggleMenuItemEnabled, updateMenuItem,
       addGroceryItem, toggleGroceryItem, removeGroceryItem, clearPurchasedGrocery,
       addStoreItem, updateStoreItemStock, checkoutStoreOrder,
       sidebarOpen, sidebarMinimized, toggleSidebarMinimized, toggleSidebarOpen, closeSidebar

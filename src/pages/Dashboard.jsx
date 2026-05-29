@@ -100,7 +100,7 @@ export default function Dashboard() {
             <table className="orders-table">
               <thead>
                 <tr>
-                  <th>Order ID</th>
+                  <th>Order No.</th>
                   <th>Table</th>
                   <th>Items</th>
                   <th>Total</th>

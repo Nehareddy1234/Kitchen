@@ -55,7 +55,7 @@ export default function Tables() {
 
               {table.status === 'occupied' && table.order && (
                 <div className="table-order-info">
-                  <span className="order-ref">{table.order.id}</span>
+                  <span className="order-ref">#{table.order.orderNumber || table.order.id.slice(0, 8)}</span>
                   <span className="order-total">₹{table.order.total}</span>
                   <span className="order-items">
                     {table.order.itemList?.map(item => {
@@ -119,7 +119,7 @@ export default function Tables() {
 
           {selectedLive.status === 'occupied' && selectedLive.order && (
             <div style={{ marginTop: '0.75rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <div className="detail-row" style={{ padding: '0.35rem 0' }}><span>Order</span><strong>{selectedLive.order.id}</strong></div>
+              <div className="detail-row" style={{ padding: '0.35rem 0' }}><span>Order No.</span><strong>#{selectedLive.order.orderNumber || selectedLive.order.id.slice(0, 8)}</strong></div>
               
               <div style={{ margin: '0.25rem 0' }}>
                 <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '0.35rem' }}>ITEMS &amp; QUANTITIES</span>
