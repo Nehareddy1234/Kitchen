@@ -23,8 +23,9 @@ export default function History() {
 
   const filteredHistory = filteredByDate.filter(order => {
     const matchesId = order.id.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesNumber = order.orderNumber ? String(order.orderNumber).includes(searchQuery) : false;
     const matchesTable = (order.table || '').toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesId || matchesTable;
+    return matchesId || matchesNumber || matchesTable;
   });
 
   const totalRevenue = filteredByDate.reduce((sum, order) => sum + order.total, 0);
@@ -136,7 +137,7 @@ export default function History() {
                 <tbody>
                   {filteredHistory.map(order => (
                     <tr key={order.id}>
-                      <td><strong className="order-id">{order.id}</strong></td>
+                      <td><strong className="order-id">#{order.orderNumber || order.id}</strong></td>
                       <td>
                         <div className="date-time">
                           <span>{order.date || 'Today'}</span>
@@ -168,7 +169,7 @@ export default function History() {
           <div className="order-detail-modal">
             <div className="modal-content card">
               <div className="modal-header">
-                <h3>Order {selectedOrder.id} Details</h3>
+                <h3>Order #{selectedOrder.orderNumber || selectedOrder.id} Details</h3>
                 <button className="close-btn" onClick={() => setSelectedOrder(null)}>&times;</button>
               </div>
               <div className="modal-body">

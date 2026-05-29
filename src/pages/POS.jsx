@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import './POS.css';
 
-const categories = ['All', 'Combos/Thali', 'Curries', 'Rotis', 'Rice', 'Drinks'];
+const categories = ['All', 'Combos', 'Curries', 'Rotis', 'Rice', 'Drinks'];
 
 export default function POS() {
   const { tables, menuItems, placeOrder, activeOrders, updateOrder } = useApp();
@@ -60,7 +60,7 @@ export default function POS() {
               
               const menuItem = menuItems.find(item => item.name === cleanName);
               if (menuItem) {
-                reconstructedCart.push({ ...menuItem, quantity: qty, addOns: menuItem.category === 'Combos/Thali' ? addOns : null });
+                reconstructedCart.push({ ...menuItem, quantity: qty, addOns: menuItem.category === 'Combos' ? addOns : null });
               }
             }
           });
@@ -102,7 +102,7 @@ export default function POS() {
     setCart(prev => {
       const existing = prev.find(i => i.id === item.id);
       if (existing) return prev.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i);
-      const defaultAddOns = item.category === 'Combos/Thali' ? { Roti: 0, Curry: 0 } : null;
+      const defaultAddOns = item.category === 'Combos' ? { Roti: 0, Curry: 0 } : null;
       return [...prev, { ...item, quantity: 1, addOns: defaultAddOns }];
     });
   };
@@ -137,12 +137,10 @@ export default function POS() {
 
   const removeFromCart = (id) => setCart(prev => prev.filter(item => item.id !== id));
 
-  const subtotal = cart.reduce((sum, item) => {
+  const total = cart.reduce((sum, item) => {
     const addOnPrice = ((item.addOns?.Roti || 0) * 15) + ((item.addOns?.Curry || 0) * 40);
     return sum + (item.price + addOnPrice) * item.quantity;
   }, 0);
-  const tax = subtotal * 0.05;
-  const total = subtotal + tax;
 
   const handlePlaceOrder = () => {
     if (cart.length === 0) return;
@@ -283,7 +281,7 @@ export default function POS() {
             cart.map(item => {
               const addOnPrice = ((item.addOns?.Roti || 0) * 15) + ((item.addOns?.Curry || 0) * 40);
               const itemTotalPrice = (item.price + addOnPrice) * item.quantity;
-              const isCombo = item.category === 'Combos/Thali';
+              const isCombo = item.category === 'Combos';
 
               return (
                 <div key={item.id} className="cart-item" style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', padding: '0.75rem', borderBottom: '1px solid var(--border-color)' }}>
@@ -352,8 +350,6 @@ export default function POS() {
         </div>
 
         <div className="cart-summary">
-          <div className="summary-row"><span>Subtotal</span><span>₹{subtotal.toFixed(2)}</span></div>
-          <div className="summary-row"><span>Tax (5% GST)</span><span>₹{tax.toFixed(2)}</span></div>
           <div className="summary-row total"><span>Total</span><span>₹{total.toFixed(2)}</span></div>
           <div style={{ display: 'flex', gap: '0.5rem', width: '100%', marginTop: '0.25rem' }}>
             {editOrderId && (

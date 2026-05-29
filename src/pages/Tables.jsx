@@ -131,7 +131,7 @@ export default function Tables() {
                     
                     const cleanName = fullName.replace(/\s*\([^)]+\)/g, '').trim();
                     const menuItem = menuItems.find(m => m.name === cleanName);
-                    const isCombo = menuItem?.category === 'Combos/Thali';
+                    const isCombo = menuItem?.category === 'Combos';
                     
                     const rotiCount = (() => {
                       const m = fullName.match(/([+-]\d+)\s*Rotis?/i);

@@ -110,7 +110,7 @@ export default function Dashboard() {
               <tbody>
                 {recentOrders.map(order => (
                   <tr key={order.id}>
-                    <td><strong>{order.id}</strong></td>
+                    <td><strong>#{order.orderNumber || order.id}</strong></td>
                     <td>{order.table}</td>
                     <td>{order.itemList?.length ?? '—'} items</td>
                     <td><strong>₹{order.total}</strong></td>

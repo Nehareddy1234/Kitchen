@@ -77,13 +77,23 @@ function mapOrder(order) {
   const tableStr = order.table ? `Table ${order.table.name}` : 'Takeaway';
 
   const d = order.createdAt ? new Date(order.createdAt) : new Date();
-  const time = d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+  const dateOptions = { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short' };
+  const timeOptions = { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true };
+  const dateStr = d.toLocaleDateString('en-IN', dateOptions);
+  const timeStr = d.toLocaleTimeString('en-IN', timeOptions);
+  const time = `${dateStr}, ${timeStr.toUpperCase()}`;
+
+  const closedDate = order.paidAt ? new Date(order.paidAt) : d;
+  const closedAt = closedDate.toLocaleTimeString('en-IN', timeOptions).toUpperCase();
+  const date = closedDate.toLocaleDateString('en-IN', dateOptions);
 
   return {
     ...order,
     itemList,
     table: tableStr,
     time,
+    date,
+    closedAt,
   };
 }
 
@@ -109,7 +119,7 @@ function calcTotal(cartItems) {
     cartItems.reduce((sum, ci) => {
       const addOnCost = ((ci.addOns?.Roti || 0) * 15) + ((ci.addOns?.Curry || 0) * 40);
       return sum + (ci.price + addOnCost) * ci.quantity;
-    }, 0) * 1.05 // 5% GST
+    }, 0)
   );
 }
 
@@ -498,7 +508,10 @@ export default async function handler(req, res) {
         if (body.status && !body.items) {
           const updated = await prisma.order.update({
             where: { id },
-            data: { status: body.status },
+            data: { 
+              status: body.status,
+              paidAt: body.status === 'Paid' ? new Date() : undefined
+            },
             include: orderInclude,
           });
 

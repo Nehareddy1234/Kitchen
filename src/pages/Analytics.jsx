@@ -252,7 +252,7 @@ export default function Analytics() {
   const finalPieData = pieData.length > 0 ? pieData : [
     { name: 'Curries', value: 15 },
     { name: 'Rotis', value: 25 },
-    { name: 'Combos/Thali', value: 12 },
+    { name: 'Combos', value: 12 },
     { name: 'Rice', value: 10 },
     { name: 'Drinks', value: 18 },
   ];
@@ -292,13 +292,13 @@ export default function Analytics() {
   // 7. Prepare Data: Sales by Day of Week (All-Time)
   const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const dayOfWeekData = {
-    Mon: { name: 'Mon', 'Combos/Thali': 0, Curries: 0, Rotis: 0, Rice: 0, Drinks: 0 },
-    Tue: { name: 'Tue', 'Combos/Thali': 0, Curries: 0, Rotis: 0, Rice: 0, Drinks: 0 },
-    Wed: { name: 'Wed', 'Combos/Thali': 0, Curries: 0, Rotis: 0, Rice: 0, Drinks: 0 },
-    Thu: { name: 'Thu', 'Combos/Thali': 0, Curries: 0, Rotis: 0, Rice: 0, Drinks: 0 },
-    Fri: { name: 'Fri', 'Combos/Thali': 0, Curries: 0, Rotis: 0, Rice: 0, Drinks: 0 },
-    Sat: { name: 'Sat', 'Combos/Thali': 0, Curries: 0, Rotis: 0, Rice: 0, Drinks: 0 },
-    Sun: { name: 'Sun', 'Combos/Thali': 0, Curries: 0, Rotis: 0, Rice: 0, Drinks: 0 },
+    Mon: { name: 'Mon', Combos: 0, Curries: 0, Rotis: 0, Rice: 0, Drinks: 0 },
+    Tue: { name: 'Tue', Combos: 0, Curries: 0, Rotis: 0, Rice: 0, Drinks: 0 },
+    Wed: { name: 'Wed', Combos: 0, Curries: 0, Rotis: 0, Rice: 0, Drinks: 0 },
+    Thu: { name: 'Thu', Combos: 0, Curries: 0, Rotis: 0, Rice: 0, Drinks: 0 },
+    Fri: { name: 'Fri', Combos: 0, Curries: 0, Rotis: 0, Rice: 0, Drinks: 0 },
+    Sat: { name: 'Sat', Combos: 0, Curries: 0, Rotis: 0, Rice: 0, Drinks: 0 },
+    Sun: { name: 'Sun', Combos: 0, Curries: 0, Rotis: 0, Rice: 0, Drinks: 0 },
   };
 
   orderHistory.forEach(order => {
@@ -637,7 +637,7 @@ export default function Analytics() {
                 <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} />
                 <Tooltip contentStyle={{ background: '#2c3e50', border: 'none', borderRadius: '8px', color: '#fff' }} />
                 <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ fontSize: 11 }} />
-                <Bar dataKey="Combos/Thali" stackId="a" fill="#e84118" />
+                <Bar dataKey="Combos" stackId="a" fill="#e84118" />
                 <Bar dataKey="Curries" stackId="a" fill="#0097e6" />
                 <Bar dataKey="Rotis" stackId="a" fill="#8c7ae6" />
                 <Bar dataKey="Rice" stackId="a" fill="#4cd137" />

@@ -39,7 +39,7 @@ export default function Orders() {
               <div key={order.id} className="order-card card">
                 <div className="order-card-header">
                   <div>
-                    <span className="order-id">{order.id}</span>
+                    <span className="order-id">#{order.orderNumber || order.id}</span>
                     <span className="order-table">{order.table}</span>
                   </div>
                   <span className="order-status-badge" style={{ background: sc.bg, color: sc.color }}>
