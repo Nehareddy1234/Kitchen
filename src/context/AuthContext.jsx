@@ -1,12 +1,15 @@
 import React, { createContext, useContext, useState } from 'react';
 
+// Relative URLs on Vercel (website), full URL in Capacitor (APK)
+const isCapacitor = typeof window !== 'undefined' && window.Capacitor !== undefined;
+const API_BASE = isCapacitor ? 'https://nehaskitchen.vercel.app' : '';
+
 // ─────────────────────────────────────────────────────
-//  Predefined Users
-//  To add more users, just push to this array.
+//  Predefined Users (Demo accounts kept in memory)
 // ─────────────────────────────────────────────────────
 const USERS = [
   {
-    id: 1,
+    id: 'demo-1',
     username: 'admin',
     password: 'admin123',
     role: 'admin',
@@ -14,7 +17,7 @@ const USERS = [
     avatar: 'AD',
   },
   {
-    id: 2,
+    id: 'demo-2',
     username: 'accounts',
     password: 'acc123',
     role: 'account_manager',
@@ -22,7 +25,7 @@ const USERS = [
     avatar: 'AC',
   },
   {
-    id: 3,
+    id: 'demo-3',
     username: 'waiter1',
     password: 'wait123',
     role: 'waiter',
@@ -30,7 +33,7 @@ const USERS = [
     avatar: 'W1',
   },
   {
-    id: 4,
+    id: 'demo-4',
     username: 'waiter2',
     password: 'wait456',
     role: 'waiter',
@@ -38,7 +41,7 @@ const USERS = [
     avatar: 'W2',
   },
   {
-    id: 5,
+    id: 'demo-5',
     username: 'table1',
     password: 'cust123',
     role: 'customer',
@@ -46,7 +49,7 @@ const USERS = [
     avatar: 'T1',
   },
   {
-    id: 6,
+    id: 'demo-6',
     username: 'table2',
     password: 'cust456',
     role: 'customer',
@@ -54,9 +57,6 @@ const USERS = [
     avatar: 'T2',
   },
 ];
-
-// In-memory fallback if localStorage is blocked
-let inMemoryCustomUsers = [];
 
 // ─────────────────────────────────────────────────────
 //  Role-based allowed nav paths
@@ -80,41 +80,58 @@ export function AuthProvider({ children }) {
     }
   });
 
-  const getCustomUsers = () => {
-    try {
-      const saved = localStorage.getItem('nk_registered_users');
-      return saved ? JSON.parse(saved) : inMemoryCustomUsers;
-    } catch {
-      return inMemoryCustomUsers;
-    }
-  };
-
-  const checkUsernameExists = (uname) => {
+  const checkUsernameExists = async (uname) => {
     const trimmed = uname.trim().toLowerCase();
+    
+    // 1. Check predefined in-memory demo accounts first
     const existsInPredefined = USERS.some(u => u.username.toLowerCase() === trimmed);
-    const customUsers = getCustomUsers();
-    const existsInCustom = customUsers.some(u => u.username.toLowerCase() === trimmed);
-    return existsInPredefined || existsInCustom;
+    if (existsInPredefined) return true;
+
+    // 2. Check Supabase database
+    try {
+      const res = await fetch(`${API_BASE}/api/users/check?username=${encodeURIComponent(trimmed)}`);
+      if (res.ok) {
+        const data = await res.json();
+        return !!data.exists;
+      }
+    } catch (e) {
+      console.error("Failed to check username availability from Supabase", e);
+    }
+    return false;
   };
 
-  const login = (username, password) => {
+  const login = async (username, password) => {
     const trimmedUsername = username.trim().toLowerCase();
-    
-    // Check custom registered users first
-    const customUsers = getCustomUsers();
-    let user = customUsers.find(
+
+    // 1. Check Supabase database first for custom registered users
+    try {
+      const res = await fetch(`${API_BASE}/api/users/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: trimmedUsername, password })
+      });
+
+      if (res.ok) {
+        const safeUser = await res.json();
+        setCurrentUser(safeUser);
+        try {
+          sessionStorage.setItem('rc_user', JSON.stringify(safeUser));
+        } catch (e) {
+          console.warn("sessionStorage failed", e);
+        }
+        return { success: true, user: safeUser };
+      }
+    } catch (e) {
+      console.error("Supabase login request failed, trying predefined demo...", e);
+    }
+
+    // 2. Fallback: check predefined in-memory demo users
+    const demoUser = USERS.find(
       u => u.username.toLowerCase() === trimmedUsername && u.password === password
     );
 
-    // If not found, check predefined demo users
-    if (!user) {
-      user = USERS.find(
-        u => u.username.toLowerCase() === trimmedUsername && u.password === password
-      );
-    }
-
-    if (user) {
-      const { password: _pw, ...safeUser } = user;
+    if (demoUser) {
+      const { password: _pw, ...safeUser } = demoUser;
       setCurrentUser(safeUser);
       try {
         sessionStorage.setItem('rc_user', JSON.stringify(safeUser));
@@ -123,49 +140,48 @@ export function AuthProvider({ children }) {
       }
       return { success: true, user: safeUser };
     }
+
     return { success: false, error: 'Invalid username or password.' };
   };
 
-  const register = (username, password, displayName, role, phone, address) => {
+  const register = async (username, password, displayName, role, phone, address) => {
     const trimmedUsername = username.trim();
     if (!trimmedUsername || !password) {
       return { success: false, error: 'Username and password are required.' };
     }
 
-    if (checkUsernameExists(trimmedUsername)) {
-      return { success: false, error: 'Username already taken.' };
-    }
-
-    const newUser = {
-      id: `u-${Date.now()}`,
-      username: trimmedUsername,
-      password: password,
-      role: role || 'waiter',
-      displayName: displayName.trim() || trimmedUsername,
-      phone: phone || '',
-      address: address || '',
-      avatar: (displayName.trim() || trimmedUsername).slice(0, 2).toUpperCase()
-    };
-
-    const customUsers = [...getCustomUsers(), newUser];
-    
+    // 1. Register in Supabase database
     try {
-      localStorage.setItem('nk_registered_users', JSON.stringify(customUsers));
-    } catch (e) {
-      console.warn("localStorage failed, saving in memory", e);
-      inMemoryCustomUsers = customUsers;
-    }
+      const res = await fetch(`${API_BASE}/api/users/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: trimmedUsername,
+          password,
+          displayName: displayName.trim() || trimmedUsername,
+          role: role || 'waiter',
+          phone: phone || '',
+          address: address || ''
+        })
+      });
 
-    // Auto login after registration
-    const { password: _pw, ...safeUser } = newUser;
-    setCurrentUser(safeUser);
-    try {
-      sessionStorage.setItem('rc_user', JSON.stringify(safeUser));
+      if (res.ok) {
+        const safeUser = await res.json();
+        setCurrentUser(safeUser);
+        try {
+          sessionStorage.setItem('rc_user', JSON.stringify(safeUser));
+        } catch (e) {
+          console.warn("sessionStorage failed", e);
+        }
+        return { success: true, user: safeUser };
+      } else {
+        const errBody = await res.json().catch(() => ({}));
+        return { success: false, error: errBody.error || `HTTP ${res.status}: Registration failed.` };
+      }
     } catch (e) {
-      console.warn("sessionStorage failed", e);
+      console.error("Supabase registration failed", e);
+      return { success: false, error: 'Failed to reach registration server. Please try again.' };
     }
-
-    return { success: true, user: safeUser };
   };
 
   const logout = () => {

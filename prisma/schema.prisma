@@ -100,8 +100,15 @@ model StoreProduct {
 }
 
 model Profile {
-  id String @id @default(uuid())
-  email String @unique
-  role String
+  id          String   @id @default(uuid())
+  email       String   @unique // Treated as unique username/email for auth
+  password    String?
+  role        String
+  displayName String?
+  phone       String?
+  address     String?
+  avatar      String?
+  createdAt   DateTime @default(now())
+
   orders Order[]
 }

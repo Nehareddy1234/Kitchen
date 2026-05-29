@@ -146,6 +146,102 @@ export default async function handler(req, res) {
 
     /**
      * =========================================================
+     * USERS (Supabase Authentication & Registration)
+     * =========================================================
+     */
+    if (path.startsWith('/api/users')) {
+      const subPath = path.replace('/api/users', '');
+
+      /**
+       * POST /api/users/register
+       */
+      if (subPath === '/register' && method === 'POST') {
+        const body = await getJsonBody(req);
+        const { username, password, displayName, role, phone, address } = body;
+
+        if (!username || !password) {
+          return send(res, 400, { error: 'Username and password are required' });
+        }
+
+        // Check if username (email in Profile) already exists
+        const exists = await prisma.profile.findUnique({
+          where: { email: username.trim().toLowerCase() }
+        });
+
+        if (exists) {
+          return send(res, 400, { error: 'Username already taken' });
+        }
+
+        const created = await prisma.profile.create({
+          data: {
+            email: username.trim().toLowerCase(),
+            password: password,
+            role: role || 'waiter',
+            displayName: displayName.trim() || username.trim(),
+            phone: phone || '',
+            address: address || '',
+            avatar: (displayName.trim() || username.trim()).slice(0, 2).toUpperCase()
+          }
+        });
+
+        const { password: _pw, ...safeUser } = created;
+        const mappedUser = {
+          ...safeUser,
+          username: safeUser.email
+        };
+        return send(res, 201, mappedUser);
+      }
+
+      /**
+       * POST /api/users/login
+       */
+      if (subPath === '/login' && method === 'POST') {
+        const body = await getJsonBody(req);
+        const { username, password } = body;
+
+        if (!username || !password) {
+          return send(res, 400, { error: 'Username and password are required' });
+        }
+
+        const user = await prisma.profile.findUnique({
+          where: { email: username.trim().toLowerCase() }
+        });
+
+        if (user && user.password === password) {
+          const { password: _pw, ...safeUser } = user;
+          const mappedUser = {
+            ...safeUser,
+            username: safeUser.email
+          };
+          return send(res, 200, mappedUser);
+        }
+
+        return send(res, 401, { error: 'Invalid username or password' });
+      }
+
+      /**
+       * GET /api/users/check (checks username uniqueness)
+       */
+      if (subPath === '/check' && method === 'GET') {
+        const queryParams = new URL(url, 'http://localhost').searchParams;
+        const usernameQuery = queryParams.get('username') || '';
+
+        if (!usernameQuery) {
+          return send(res, 400, { error: 'Username query parameter is required' });
+        }
+
+        const user = await prisma.profile.findUnique({
+          where: { email: usernameQuery.trim().toLowerCase() }
+        });
+
+        return send(res, 200, { exists: !!user });
+      }
+
+      return send(res, 405, { error: 'Method not allowed' });
+    }
+
+    /**
+     * =========================================================
      * MENU
      * =========================================================
      */
