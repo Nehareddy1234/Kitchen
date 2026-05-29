@@ -9,8 +9,10 @@ export default function GroceryHistory() {
   const [selectedOrder, setSelectedOrder] = useState(null);
 
   const filteredHistory = storeOrders.filter(order => {
-    return order.id.toLowerCase().includes(searchQuery.toLowerCase());
-  });
+  const idMatch = order.id.toLowerCase().includes(searchQuery.toLowerCase());
+  const numberMatch = order.orderNumber && order.orderNumber.toString().includes(searchQuery);
+  return idMatch || numberMatch;
+});
 
   const totalRevenue = storeOrders.reduce((sum, order) => sum + order.total, 0);
   const totalOrders = storeOrders.length;
@@ -81,7 +83,7 @@ export default function GroceryHistory() {
                 <tbody>
                   {filteredHistory.map(order => (
                     <tr key={order.id}>
-                      <td><strong className="order-id">{order.id}</strong></td>
+                      <td><strong className="order-id">#{order.orderNumber || order.id}</strong></td>
                       <td>
                         <div className="date-time">
                           <span>{order.date}</span>
@@ -113,7 +115,7 @@ export default function GroceryHistory() {
           <div className="order-detail-modal">
             <div className="modal-content card">
               <div className="modal-header">
-                <h3>Order {selectedOrder.id} Details</h3>
+                <h3>Order #{selectedOrder.orderNumber || selectedOrder.id} Details</h3>
                 <button className="close-btn" onClick={() => setSelectedOrder(null)}>&times;</button>
               </div>
               <div className="modal-body">

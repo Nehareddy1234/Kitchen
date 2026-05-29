@@ -59,9 +59,10 @@ function send(res, status, data) {
 
 /**
  * Maps a DB order (with items.menuItem) into the shape the frontend expects:
+ *  - orderNumber: sequential int (1, 2, 3...)
  *  - itemList: ["Thali (+1 Roti) x2", "Dal Makhani x1", ...]  (string array)
  *  - table:    "Table T1"  (string, or "Takeaway")
- *  - time:     "HH:MM"
+ *  - time:     "DD MMM, HH:MM AM/PM" in IST
  */
 function mapOrder(order) {
   const itemList = (order.items || []).map(oi => {
@@ -89,6 +90,7 @@ function mapOrder(order) {
 
   return {
     ...order,
+    orderNumber: order.orderNumber ?? null,  // explicit — never lost in spread
     itemList,
     table: tableStr,
     time,
