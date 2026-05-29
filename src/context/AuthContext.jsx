@@ -111,7 +111,7 @@ export function AuthProvider({ children }) {
     return { success: false, error: 'Invalid username or password.' };
   };
 
-  const register = (username, password, displayName, role) => {
+  const register = (username, password, displayName, role, phone, address) => {
     const trimmedUsername = username.trim();
     if (!trimmedUsername || !password) {
       return { success: false, error: 'Username and password are required.' };
@@ -135,6 +135,8 @@ export function AuthProvider({ children }) {
       password: password,
       role: role || 'waiter',
       displayName: displayName.trim() || trimmedUsername,
+      phone: phone || '',
+      address: address || '',
       avatar: (displayName.trim() || trimmedUsername).slice(0, 2).toUpperCase()
     };
 

@@ -17,32 +17,48 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [role, setRole] = useState('waiter');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  
+  // OTP States
+  const [showOtpVerification, setShowOtpVerification] = useState(false);
+  const [generatedOtp, setGeneratedOtp] = useState('');
+  const [enteredOtp, setEnteredOtp] = useState('');
+  const [otpError, setOtpError] = useState('');
+
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const checkUsernameExists = (uname) => {
+    const trimmed = uname.trim().toLowerCase();
+    const customUsers = JSON.parse(localStorage.getItem('nk_registered_users') || '[]');
+    const predefinedUsers = ['admin', 'accounts', 'waiter1', 'waiter2', 'table1', 'table2'];
+    return predefinedUsers.includes(trimmed) || customUsers.some(u => u.username.toLowerCase() === trimmed);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
 
-    setTimeout(() => {
-      if (isSignUp) {
-        const result = register(username, password, displayName, role);
-        if (result.success) {
-          const userRole = result.user.role;
-          if (userRole === 'waiter') {
-            navigate('/pos');
-          } else if (userRole === 'customer') {
-            navigate('/customer-menu');
-          } else {
-            navigate('/');
-          }
-        } else {
-          setError(result.error);
-        }
-      } else {
+    if (isSignUp) {
+      if (checkUsernameExists(username)) {
+        setError('Username already taken.');
+        return;
+      }
+      
+      setLoading(true);
+      // Simulate sending OTP
+      setTimeout(() => {
+        const mockOtp = Math.floor(100000 + Math.random() * 900000).toString();
+        setGeneratedOtp(mockOtp);
+        setShowOtpVerification(true);
+        setLoading(false);
+      }, 500);
+    } else {
+      setLoading(true);
+      setTimeout(() => {
         const result = login(username, password);
         if (result.success) {
           const userRole = result.user.role;
@@ -56,9 +72,41 @@ export default function Login() {
         } else {
           setError(result.error);
         }
+        setLoading(false);
+      }, 400);
+    }
+  };
+
+  const handleVerifyOtp = (e) => {
+    e.preventDefault();
+    if (enteredOtp.length !== 6) {
+      setOtpError('Please enter a 6-digit OTP code.');
+      return;
+    }
+
+    if (enteredOtp !== generatedOtp) {
+      setOtpError('Invalid OTP code. Please try again.');
+      return;
+    }
+
+    setLoading(true);
+    setTimeout(() => {
+      const result = register(username, password, displayName, role, phone, address);
+      if (result.success) {
+        const userRole = result.user.role;
+        if (userRole === 'waiter') {
+          navigate('/pos');
+        } else if (userRole === 'customer') {
+          navigate('/customer-menu');
+        } else {
+          navigate('/');
+        }
+      } else {
+        setOtpError(result.error);
+        setShowOtpVerification(false);
       }
       setLoading(false);
-    }, 400);
+    }, 500);
   };
 
   const toggleMode = () => {
@@ -67,8 +115,177 @@ export default function Login() {
     setUsername('');
     setPassword('');
     setDisplayName('');
+    setPhone('');
+    setAddress('');
     setRole('waiter');
   };
+
+  if (showOtpVerification) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '1rem',
+        boxSizing: 'border-box',
+        fontFamily: "'Inter', 'Segoe UI', sans-serif",
+      }}>
+        <div style={{ width: '100%', maxWidth: '420px' }}>
+
+          {/* Brand */}
+          <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+            <div style={{
+              width: '72px', height: '72px',
+              borderRadius: '20px',
+              background: 'linear-gradient(135deg, #e84118, #c0392b)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 1rem auto',
+              boxShadow: '0 8px 32px rgba(232,65,24,0.35)',
+              fontSize: '1.8rem',
+            }}>
+              🔑
+            </div>
+            <h1 style={{ color: '#fff', fontSize: '1.8rem', fontWeight: 800, margin: '0 0 0.25rem 0' }}>
+              Verification
+            </h1>
+            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', margin: 0 }}>
+              Verify mobile to complete signup
+            </p>
+          </div>
+
+          {/* Card */}
+          <div style={{
+            background: 'rgba(255,255,255,0.95)',
+            borderRadius: '20px',
+            padding: '2rem',
+            boxShadow: '0 24px 64px rgba(0,0,0,0.3)',
+          }}>
+            <h2 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '0.25rem', color: '#1a1a2e' }}>
+              Enter OTP Code
+            </h2>
+            <p style={{ fontSize: '0.85rem', color: '#6c757d', marginBottom: '1.5rem' }}>
+              We've sent a 6-digit OTP to your phone: <strong style={{ color: '#1a1a2e' }}>{phone}</strong>
+            </p>
+
+            {/* Visual SMS Simulation Banner */}
+            <div style={{
+              background: '#eef2f7',
+              borderLeft: '4px solid #00b894',
+              borderRadius: '8px',
+              padding: '0.75rem 1rem',
+              marginBottom: '1.5rem',
+              fontSize: '0.85rem',
+              color: '#2d3436',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+              lineHeight: '1.4',
+            }}>
+              <div style={{ fontWeight: 700, color: '#00b894', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.2rem' }}>
+                <span>📨 SMS Simulator</span>
+                <span style={{ fontSize: '0.7rem', fontWeight: 500, background: 'rgba(0,184,148,0.15)', color: '#00b894', padding: '0.05rem 0.3rem', borderRadius: '4px' }}>Now</span>
+              </div>
+              Your Neha's Kitchen verification OTP is <strong style={{ letterSpacing: '1px', color: '#e84118', fontSize: '0.95rem' }}>{generatedOtp}</strong>. Valid for 10 minutes.
+            </div>
+
+            {otpError && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '0.5rem',
+                background: '#fff0ed', color: '#e84118',
+                border: '1px solid #f5c6bc',
+                borderRadius: '10px', padding: '0.75rem 1rem',
+                marginBottom: '1.25rem', fontSize: '0.9rem', fontWeight: 500,
+              }}>
+                <AlertCircle size={16} />
+                {otpError}
+              </div>
+            )}
+
+            <form onSubmit={handleVerifyOtp} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#343a40', textAlign: 'center' }}>
+                  6-Digit OTP
+                </label>
+                <input
+                  type="text"
+                  maxLength={6}
+                  value={enteredOtp}
+                  onChange={e => {
+                    const val = e.target.value.replace(/\D/g, '');
+                    setEnteredOtp(val);
+                    setOtpError('');
+                  }}
+                  placeholder="------"
+                  autoFocus
+                  style={{
+                    padding: '0.9rem',
+                    borderRadius: '10px',
+                    border: '1.5px solid #dee2e6',
+                    fontSize: '1.5rem',
+                    fontWeight: 700,
+                    letterSpacing: '8px',
+                    textAlign: 'center',
+                    outline: 'none',
+                    transition: 'border-color 0.2s',
+                  }}
+                  onFocus={e => e.target.style.borderColor = '#e84118'}
+                  onBlur={e => e.target.style.borderColor = '#dee2e6'}
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  marginTop: '0.5rem',
+                  padding: '0.9rem',
+                  borderRadius: '12px',
+                  border: 'none',
+                  background: loading ? '#adb5bd' : 'linear-gradient(135deg, #e84118, #c0392b)',
+                  color: '#fff',
+                  fontWeight: 700,
+                  fontSize: '1rem',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                  boxShadow: loading ? 'none' : '0 4px 16px rgba(232,65,24,0.35)',
+                  transition: 'all 0.2s',
+                }}
+              >
+                {loading ? 'Verifying...' : 'Verify & Sign Up'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowOtpVerification(false);
+                  setEnteredOtp('');
+                  setOtpError('');
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#6c757d',
+                  fontWeight: 600,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  textDecoration: 'underline',
+                  marginTop: '0.25rem',
+                }}
+              >
+                Go Back & Edit Info
+              </button>
+            </form>
+          </div>
+
+          <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem', marginTop: '1.5rem' }}>
+            Neha's Kitchen POS v4 © 2026
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{
@@ -164,6 +381,50 @@ export default function Login() {
                     padding: '0.8rem 1rem', borderRadius: '10px',
                     border: '1.5px solid #dee2e6',
                     fontSize: '0.95rem', outline: 'none',
+                    transition: 'border-color 0.2s',
+                  }}
+                  onFocus={e => e.target.style.borderColor = '#e84118'}
+                  onBlur={e => e.target.style.borderColor = '#dee2e6'}
+                  required
+                />
+              </div>
+            )}
+
+            {isSignUp && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#343a40' }}>Phone Number</label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={e => { setPhone(e.target.value); setError(''); }}
+                  placeholder="Enter your mobile number"
+                  style={{
+                    padding: '0.8rem 1rem', borderRadius: '10px',
+                    border: '1.5px solid #dee2e6',
+                    fontSize: '0.95rem', outline: 'none',
+                    transition: 'border-color 0.2s',
+                  }}
+                  onFocus={e => e.target.style.borderColor = '#e84118'}
+                  onBlur={e => e.target.style.borderColor = '#dee2e6'}
+                  required
+                />
+              </div>
+            )}
+
+            {isSignUp && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#343a40' }}>Address</label>
+                <textarea
+                  value={address}
+                  onChange={e => { setAddress(e.target.value); setError(''); }}
+                  placeholder="Enter your home address"
+                  rows={2}
+                  style={{
+                    padding: '0.8rem 1rem', borderRadius: '10px',
+                    border: '1.5px solid #dee2e6',
+                    fontSize: '0.95rem', outline: 'none',
+                    resize: 'none',
+                    fontFamily: 'inherit',
                     transition: 'border-color 0.2s',
                   }}
                   onFocus={e => e.target.style.borderColor = '#e84118'}
