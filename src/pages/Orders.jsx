@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ChefHat, CheckCircle, Clock, Printer, Edit, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
@@ -11,6 +11,7 @@ const statusConfig = {
 
 export default function Orders() {
   const { activeOrders, markOrderReady, closeOrder, refreshData } = useApp();
+  const [paymentMethods, setPaymentMethods] = useState({});
   const navigate = useNavigate();
 
   return (
@@ -69,9 +70,20 @@ export default function Orders() {
                     </button>
                   )}
                   {order.status === 'Ready' && (
-                    <button className="btn btn-primary" onClick={() => closeOrder(order.id)}>
-                      <Printer size={15} /> Bill &amp; Close
-                    </button>
+                    <>
+                      <select
+                        value={paymentMethods[order.id] || 'Cash'}
+                        onChange={e => setPaymentMethods(prev => ({ ...prev, [order.id]: e.target.value }))}
+                        className="payment-select"
+                        style={{ marginRight: '0.5rem' }}
+                      >
+                        <option value="Cash">Cash</option>
+                        <option value="UPI">UPI</option>
+                      </select>
+                      <button className="btn btn-primary" onClick={() => closeOrder(order.id, paymentMethods[order.id] || 'Cash')}>
+                        <Printer size={15} /> Bill &amp; Close
+                      </button>
+                    </>
                   )}
                 </div>
               </div>

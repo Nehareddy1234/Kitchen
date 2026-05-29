@@ -19,6 +19,12 @@ export function AppProvider({ children }) {
   const [appMode, setAppMode] = useState('restaurant'); // 'restaurant' | 'grocery'
 
   const [tables, setTables] = useState(initialTables);
+  const [paymentMethods, setPaymentMethods] = useState({});
+
+  const handlePaymentChange = (orderId, method) => {
+    setPaymentMethods(prev => ({ ...prev, [orderId]: method }));
+  };
+
   const [activeOrders, setActiveOrders] = useState([]);
   const [orderHistory, setOrderHistory] = useState([]);
   const [menuItems, setMenuItems] = useState(initialMenuItems);
@@ -197,10 +203,10 @@ export function AppProvider({ children }) {
     } catch (e) {}
   };
 
-  const closeOrder = async (orderId) => {
+  const closeOrder = async (orderId, paymentMethod = 'Cash') => {
     const order = activeOrders.find(o => o.id === orderId);
     if (order) {
-      const paidOrder = { ...order, status: 'Paid', closedAt: new Date().toLocaleTimeString() };
+      const paidOrder = { ...order, status: 'Paid', closedAt: new Date().toLocaleTimeString(), paymentMethod };
       setOrderHistory(prev => [paidOrder, ...prev]);
       setActiveOrders(prev => prev.filter(o => o.id !== orderId));
       setTables(prev => prev.map(t => t.order?.id === orderId ? { ...t, status: 'available', order: null } : t));
@@ -209,7 +215,7 @@ export function AppProvider({ children }) {
         await fetch(`${API_BASE}/api/orders/${orderId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'Paid' })
+          body: JSON.stringify({ status: 'Paid', paymentMethod })
         });
       } catch (e) { console.error('closeOrder API error', e); }
     }

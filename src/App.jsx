@@ -74,8 +74,8 @@ function AppContent() {
         <button className="hamburger-btn" onClick={toggleSidebarOpen} aria-label="Open navigation menu">
           <HamburgerIcon size={24} />
         </button>
-        <div className="mobile-brand-logo">RC</div>
-        <span className="mobile-brand-title">Roti Curry POS</span>
+        <div className="mobile-brand-logo">NK</div>
+        <span className="mobile-brand-title">Neha's Kitchen</span>
       </header>
 
       {/* Mobile Backdrop */}
