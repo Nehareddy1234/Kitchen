@@ -137,7 +137,7 @@ export default function History() {
                 <tbody>
                   {filteredHistory.map(order => (
                     <tr key={order.id}>
-                      <td><strong className="order-id">#{order.orderNumber || order.id}</strong></td>
+                      <td><strong className="order-id">#{order.orderNumber}</strong> <span className="text-muted" style={{ fontSize: '0.75rem' }}>({order.id.slice(0, 8)})</span></td>
                       <td>
                         <div className="date-time">
                           <span>{order.date || 'Today'}</span>
@@ -169,7 +169,7 @@ export default function History() {
           <div className="order-detail-modal">
             <div className="modal-content card">
               <div className="modal-header">
-                <h3>Order #{selectedOrder.orderNumber || selectedOrder.id} Details</h3>
+                <h3>Order #{selectedOrder.orderNumber} <span className="text-muted" style={{ fontSize: '1rem', fontWeight: 'normal' }}>({selectedOrder.id.slice(0, 8)})</span> Details</h3>
                 <button className="close-btn" onClick={() => setSelectedOrder(null)}>&times;</button>
               </div>
               <div className="modal-body">
