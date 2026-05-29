@@ -77,10 +77,31 @@ export function AuthProvider({ children }) {
     }
   });
 
+  const getCustomUsers = () => {
+    try {
+      const saved = localStorage.getItem('nk_registered_users');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  };
+
   const login = (username, password) => {
-    const user = USERS.find(
-      u => u.username === username.trim() && u.password === password
+    const trimmedUsername = username.trim().toLowerCase();
+    
+    // Check custom registered users first
+    const customUsers = getCustomUsers();
+    let user = customUsers.find(
+      u => u.username.toLowerCase() === trimmedUsername && u.password === password
     );
+
+    // If not found, check predefined demo users
+    if (!user) {
+      user = USERS.find(
+        u => u.username.toLowerCase() === trimmedUsername && u.password === password
+      );
+    }
+
     if (user) {
       const { password: _pw, ...safeUser } = user;
       setCurrentUser(safeUser);
@@ -88,6 +109,44 @@ export function AuthProvider({ children }) {
       return { success: true, user: safeUser };
     }
     return { success: false, error: 'Invalid username or password.' };
+  };
+
+  const register = (username, password, displayName, role) => {
+    const trimmedUsername = username.trim();
+    if (!trimmedUsername || !password) {
+      return { success: false, error: 'Username and password are required.' };
+    }
+
+    const checkUsername = trimmedUsername.toLowerCase();
+
+    // Check predefined users
+    const existsInPredefined = USERS.some(u => u.username.toLowerCase() === checkUsername);
+    // Check custom registered users
+    const customUsers = getCustomUsers();
+    const existsInCustom = customUsers.some(u => u.username.toLowerCase() === checkUsername);
+
+    if (existsInPredefined || existsInCustom) {
+      return { success: false, error: 'Username already taken.' };
+    }
+
+    const newUser = {
+      id: `u-${Date.now()}`,
+      username: trimmedUsername,
+      password: password,
+      role: role || 'waiter',
+      displayName: displayName.trim() || trimmedUsername,
+      avatar: (displayName.trim() || trimmedUsername).slice(0, 2).toUpperCase()
+    };
+
+    customUsers.push(newUser);
+    localStorage.setItem('nk_registered_users', JSON.stringify(customUsers));
+
+    // Auto login after registration
+    const { password: _pw, ...safeUser } = newUser;
+    setCurrentUser(safeUser);
+    sessionStorage.setItem('rc_user', JSON.stringify(safeUser));
+
+    return { success: true, user: safeUser };
   };
 
   const logout = () => {
@@ -102,7 +161,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ currentUser, login, logout, hasAccess, employees: USERS }}>
+    <AuthContext.Provider value={{ currentUser, login, register, logout, hasAccess, employees: USERS }}>
       {children}
     </AuthContext.Provider>
   );

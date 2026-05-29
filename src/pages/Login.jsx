@@ -11,10 +11,13 @@ const ROLE_LABELS = {
 };
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, register } = useAuth();
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [role, setRole] = useState('waiter');
+  const [isSignUp, setIsSignUp] = useState(false);
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -25,20 +28,46 @@ export default function Login() {
     setLoading(true);
 
     setTimeout(() => {
-      const result = login(username, password);
-      if (result.success) {
-        // Redirect based on user role
-        const role = result.user.role;
-        if (role === 'waiter') {
-          navigate('/pos');
+      if (isSignUp) {
+        const result = register(username, password, displayName, role);
+        if (result.success) {
+          const userRole = result.user.role;
+          if (userRole === 'waiter') {
+            navigate('/pos');
+          } else if (userRole === 'customer') {
+            navigate('/customer-menu');
+          } else {
+            navigate('/');
+          }
         } else {
-          navigate('/');
+          setError(result.error);
         }
       } else {
-        setError(result.error);
+        const result = login(username, password);
+        if (result.success) {
+          const userRole = result.user.role;
+          if (userRole === 'waiter') {
+            navigate('/pos');
+          } else if (userRole === 'customer') {
+            navigate('/customer-menu');
+          } else {
+            navigate('/');
+          }
+        } else {
+          setError(result.error);
+        }
       }
       setLoading(false);
     }, 400);
+  };
+
+  const toggleMode = () => {
+    setIsSignUp(prev => !prev);
+    setError('');
+    setUsername('');
+    setPassword('');
+    setDisplayName('');
+    setRole('waiter');
   };
 
   return (
@@ -49,6 +78,7 @@ export default function Login() {
       alignItems: 'center',
       justifyContent: 'center',
       padding: '1rem',
+      boxSizing: 'border-box',
       fontFamily: "'Inter', 'Segoe UI', sans-serif",
     }}>
       <div style={{ width: '100%', maxWidth: '420px' }}>
@@ -82,10 +112,10 @@ export default function Login() {
           boxShadow: '0 24px 64px rgba(0,0,0,0.3)',
         }}>
           <h2 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '0.25rem', color: '#1a1a2e' }}>
-            Sign In
+            {isSignUp ? 'Create Account' : 'Sign In'}
           </h2>
           <p style={{ fontSize: '0.85rem', color: '#6c757d', marginBottom: '1.75rem' }}>
-            Enter your credentials to continue
+            {isSignUp ? 'Fill in your details to register' : 'Enter your credentials to continue'}
           </p>
 
           {error && (
@@ -121,6 +151,51 @@ export default function Login() {
                 required
               />
             </div>
+
+            {isSignUp && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#343a40' }}>Display Name</label>
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={e => { setDisplayName(e.target.value); setError(''); }}
+                  placeholder="Enter your name"
+                  style={{
+                    padding: '0.8rem 1rem', borderRadius: '10px',
+                    border: '1.5px solid #dee2e6',
+                    fontSize: '0.95rem', outline: 'none',
+                    transition: 'border-color 0.2s',
+                  }}
+                  onFocus={e => e.target.style.borderColor = '#e84118'}
+                  onBlur={e => e.target.style.borderColor = '#dee2e6'}
+                  required
+                />
+              </div>
+            )}
+
+            {isSignUp && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#343a40' }}>Role</label>
+                <select
+                  value={role}
+                  onChange={e => setRole(e.target.value)}
+                  style={{
+                    padding: '0.8rem 1rem', borderRadius: '10px',
+                    border: '1.5px solid #dee2e6',
+                    fontSize: '0.95rem', outline: 'none',
+                    background: '#fff',
+                    transition: 'border-color 0.2s',
+                  }}
+                  onFocus={e => e.target.style.borderColor = '#e84118'}
+                  onBlur={e => e.target.style.borderColor = '#dee2e6'}
+                >
+                  <option value="admin">Admin</option>
+                  <option value="account_manager">Account Manager</option>
+                  <option value="waiter">Waiter</option>
+                  <option value="customer">Customer</option>
+                </select>
+              </div>
+            )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
               <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#343a40' }}>Password</label>
@@ -174,48 +249,27 @@ export default function Login() {
               }}
             >
               <LogIn size={18} />
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? (isSignUp ? 'Signing up...' : 'Signing in...') : (isSignUp ? 'Sign Up' : 'Sign In')}
             </button>
           </form>
 
-          {/* Quick-access hint */}
-          <div style={{ marginTop: '1.75rem', paddingTop: '1.5rem', borderTop: '1px solid #f1f3f5' }}>
-            <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#adb5bd', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.75rem' }}>
-              Demo Accounts
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-              {[
-                { user: 'admin', pw: 'admin123', role: 'admin' },
-                { user: 'accounts', pw: 'acc123', role: 'account_manager' },
-                { user: 'waiter1', pw: 'wait123', role: 'waiter' },
-                { user: 'table1', pw: 'cust123', role: 'customer' },
-              ].map(({ user, pw, role }) => {
-                const info = ROLE_LABELS[role];
-                return (
-                  <button
-                    key={user}
-                    type="button"
-                    onClick={() => { setUsername(user); setPassword(pw); setError(''); }}
-                    style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      padding: '0.5rem 0.75rem',
-                      borderRadius: '8px', border: '1px solid #f1f3f5',
-                      background: '#fafafa', cursor: 'pointer',
-                      transition: 'background 0.15s', textAlign: 'left',
-                    }}
-                  >
-                    <span style={{ fontWeight: 600, fontSize: '0.85rem', color: '#343a40' }}>{user}</span>
-                    <span style={{
-                      fontSize: '0.72rem', fontWeight: 600,
-                      color: info.color, background: info.bg,
-                      padding: '0.15rem 0.5rem', borderRadius: '20px',
-                    }}>
-                      {info.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+          {/* Mode toggle */}
+          <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+            <button
+              type="button"
+              onClick={toggleMode}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#e84118',
+                fontWeight: 600,
+                fontSize: '0.875rem',
+                cursor: 'pointer',
+                textDecoration: 'underline',
+              }}
+            >
+              {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
+            </button>
           </div>
         </div>
 
