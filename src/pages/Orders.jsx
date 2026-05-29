@@ -11,7 +11,8 @@ const statusConfig = {
 
 export default function Orders() {
   const { activeOrders, markOrderReady, closeOrder, refreshData } = useApp();
-  const [paymentMethods, setPaymentMethods] = useState({});
+    const [paymentMethods, setPaymentMethods] = useState({});
+  const [dialogOrderId, setDialogOrderId] = useState(null);
   const navigate = useNavigate();
 
   return (
@@ -70,21 +71,41 @@ export default function Orders() {
                     </button>
                   )}
                   {order.status === 'Ready' && (
-                    <>
-                      <select
-                        value={paymentMethods[order.id] || 'Cash'}
-                        onChange={e => setPaymentMethods(prev => ({ ...prev, [order.id]: e.target.value }))}
-                        className="payment-select"
-                        style={{ marginRight: '0.5rem' }}
-                      >
-                        <option value="Cash">Cash</option>
-                        <option value="UPI">UPI</option>
-                      </select>
-                      <button className="btn btn-primary" onClick={() => closeOrder(order.id, paymentMethods[order.id] || 'Cash')}>
-                        <Printer size={15} /> Bill &amp; Close
-                      </button>
-                    </>
-                  )}
+                  <>
+                    <button className="btn btn-primary" onClick={() => setDialogOrderId(order.id)}>
+                      <Printer size={15} /> Bill & Close
+                    </button>
+                    {dialogOrderId === order.id && (
+                      <div className="dialog-overlay">
+                        <div className="dialog">
+                          <h3>Select payment method</h3>
+                          <select
+                            value={paymentMethods[order.id] || 'Cash'}
+                            onChange={e => setPaymentMethods(prev => ({ ...prev, [order.id]: e.target.value }))}
+                            className="payment-select"
+                          >
+                            <option value="Cash">Cash</option>
+                            <option value="UPI">UPI</option>
+                          </select>
+                          <div className="dialog-actions" style={{ marginTop: '0.5rem' }}>
+                            <button
+                              className="btn btn-primary"
+                              onClick={() => {
+                                closeOrder(order.id, paymentMethods[order.id] || 'Cash');
+                                setDialogOrderId(null);
+                              }}
+                            >
+                              Confirm
+                            </button>
+                            <button className="btn btn-outline" onClick={() => setDialogOrderId(null)}>
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
                 </div>
               </div>
             );
