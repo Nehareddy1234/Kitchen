@@ -11,6 +11,7 @@ import Menu from './pages/Menu';
 import Grocery from './pages/Grocery';
 import History from './pages/History';
 import Analytics from './pages/Analytics';
+import Expenses from './pages/Expenses';
 import GroceryInventory from './pages/GroceryInventory';
 import GroceryPOS from './pages/GroceryPOS';
 import GroceryHistory from './pages/GroceryHistory';
@@ -92,6 +93,7 @@ function AppContent() {
           <Route path="/menu"      element={<ProtectedRoute path="/menu"><Menu /></ProtectedRoute>} />
           <Route path="/grocery"   element={<ProtectedRoute path="/grocery"><Grocery /></ProtectedRoute>} />
           <Route path="/history"   element={<ProtectedRoute path="/history"><History /></ProtectedRoute>} />
+          <Route path="/expenses"  element={<ProtectedRoute path="/expenses"><Expenses /></ProtectedRoute>} />
           <Route path="/analytics" element={<ProtectedRoute path="/analytics"><Analytics /></ProtectedRoute>} />
           
           {/* Grocery Store Routes */}
