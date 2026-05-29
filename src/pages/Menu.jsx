@@ -3,7 +3,7 @@ import { Plus, Trash2, ToggleLeft, ToggleRight, Check, AlertCircle } from 'lucid
 import { useApp } from '../context/AppContext';
 import './Menu.css';
 
-const CATEGORIES = ['Combos/Thali', 'Curries', 'Rotis', 'Rice', 'Drinks'];
+const CATEGORIES = ['Combos', 'Curries', 'Rotis', 'Rice', 'Drinks', 'Uggani', 'Idli'];
 
 export default function Menu() {
   const { menuItems, addMenuItem, removeMenuItem, toggleMenuItemEnabled } = useApp();

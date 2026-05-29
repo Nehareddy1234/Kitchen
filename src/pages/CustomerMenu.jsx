@@ -16,10 +16,10 @@ export default function CustomerMenu() {
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderId, setOrderId] = useState('');
 
-  const categories = ['All', ...new Set(menuItems.filter(i => i.available !== false).map(i => i.category))];
+  const categories = ['All', ...new Set(menuItems.filter(i => i.enabled !== false).map(i => i.category))];
 
   const filteredItems = menuItems.filter(item => {
-    if (item.available === false) return false;
+    if (item.enabled === false) return false;
     const matchesCat = selectedCategory === 'All' || item.category === selectedCategory;
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCat && matchesSearch;

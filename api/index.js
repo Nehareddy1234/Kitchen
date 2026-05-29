@@ -295,9 +295,6 @@ export default async function handler(req, res) {
         }
 
         const items = await prisma.menuItem.findMany({
-          where: {
-            enabled: true,
-          },
           orderBy: {
             id: 'asc',
           },
@@ -349,11 +346,13 @@ export default async function handler(req, res) {
        * SOFT DELETE MENU ITEM
        */
       if (method === 'DELETE' && id) {
-        const deleted = await prisma.menuItem.update({
+        // Delete related order items first to avoid foreign key violations
+        await prisma.orderItem.deleteMany({
+          where: { menuItemId: id },
+        });
+
+        const deleted = await prisma.menuItem.delete({
           where: { id },
-          data: {
-            enabled: false,
-          },
         });
 
         return send(res, 200, deleted);
