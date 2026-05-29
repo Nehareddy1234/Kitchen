@@ -66,9 +66,12 @@ export default function POS() {
           });
           setCart(reconstructedCart);
 
-          if (order.table && order.table.startsWith('Table T')) {
-            const tableIdStr = order.table.replace('Table T', '');
-            setSelectedTable(tableIdStr);
+          // order.table is a string like "Table T1" or "Takeaway" (from backend mapOrder)
+          if (order.table && order.table.startsWith('Table ')) {
+            // Find the matching table by name: "Table T1" → name "T1"
+            const tableName = order.table.replace('Table ', ''); // e.g. "T1"
+            const matchingTable = tables.find(t => t.name === tableName);
+            setSelectedTable(matchingTable ? String(matchingTable.id) : '');
           } else {
             setSelectedTable('');
           }

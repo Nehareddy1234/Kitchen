@@ -38,11 +38,8 @@ export function AppProvider({ children }) {
         ]);
 
         if (menuRes && menuRes.ok) setMenuItems(await menuRes.json());
-        if (tablesRes && tablesRes.ok) {
-          const rawTables = await tablesRes.json();
-          // Map `orders[]` array to `order` (latest active) for UI compatibility
-          setTables(rawTables.map(t => ({ ...t, order: t.orders?.[0] || null })));
-        }
+        // Tables are already mapped by the backend (order is the active order)
+        if (tablesRes && tablesRes.ok) setTables(await tablesRes.json());
         if (ordersRes && ordersRes.ok) {
           const allOrders = await ordersRes.json();
           setActiveOrders(allOrders.filter(o => o.status !== 'Paid'));
@@ -83,10 +80,7 @@ export function AppProvider({ children }) {
         fetch(`${API_BASE}/api/grocery`).catch(() => null)
       ]);
       if (menuRes && menuRes.ok) setMenuItems(await menuRes.json());
-      if (tablesRes && tablesRes.ok) {
-        const rawTables = await tablesRes.json();
-        setTables(rawTables.map(t => ({ ...t, order: t.orders?.[0] || null })));
-      }
+      if (tablesRes && tablesRes.ok) setTables(await tablesRes.json());
       if (ordersRes && ordersRes.ok) {
         const allOrders = await ordersRes.json();
         setActiveOrders(allOrders.filter(o => o.status !== 'Paid'));
@@ -104,13 +98,19 @@ export function AppProvider({ children }) {
       const res = await fetch(`${API_BASE}/api/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        // Send price per item so backend can accurately compute the total (incl. add-ons)
         body: JSON.stringify({
-          tableId,
-          items: cartItems.map(c => ({ menuItemId: c.id, quantity: c.quantity, addOns: c.addOns }))
+          tableId: tableId || null,
+          items: cartItems.map(c => ({
+            menuItemId: c.id,
+            quantity: c.quantity,
+            addOns: c.addOns || null,
+            price: c.price,
+          }))
         })
       });
       if (res.ok) {
-        const newOrder = await res.json();
+        const newOrder = await res.json(); // already mapped: has itemList, table string, time
         setActiveOrders(prev => [newOrder, ...prev]);
         if (tableId) {
           setTables(prev => prev.map(t =>
@@ -118,19 +118,72 @@ export function AppProvider({ children }) {
           ));
         }
         return newOrder.id;
+      } else {
+        const err = await res.json().catch(() => ({}));
+        console.error('placeOrder API error:', err);
       }
     } catch (e) {
-      console.error("Failed to place order via API", e);
+      console.error('Failed to place order via API', e);
     }
-    return `#ORD-${Date.now()}`;
+    return null;
   };
 
-  const updateOrder = (orderId, cartItems, tableId) => {
-    // Basic fallback stub for updating order
+  const updateOrder = async (orderId, cartItems, tableId) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/orders/${orderId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tableId: tableId || null,
+          items: cartItems.map(c => ({
+            menuItemId: c.id,
+            quantity: c.quantity,
+            addOns: c.addOns || null,
+            price: c.price,
+          }))
+        })
+      });
+      if (res.ok) {
+        const updatedOrder = await res.json();
+        setActiveOrders(prev => prev.map(o => o.id === orderId ? updatedOrder : o));
+        // Sync table assignment
+        setTables(prev => prev.map(t => {
+          if (t.order?.id === orderId) {
+            return tableId && t.id === tableId
+              ? { ...t, status: 'occupied', order: updatedOrder }
+              : { ...t, status: 'available', order: null };
+          }
+          if (tableId && t.id === tableId) return { ...t, status: 'occupied', order: updatedOrder };
+          return t;
+        }));
+        return updatedOrder.id;
+      } else {
+        const err = await res.json().catch(() => ({}));
+        console.error('updateOrder API error:', err);
+      }
+    } catch (e) {
+      console.error('Failed to update order via API', e);
+    }
+    return null;
   };
 
   const updateOrderItemQuantity = (orderId, nameToUpdate, delta, isAddOn = null, addOnDelta = 0) => {
-    // Basic fallback stub
+    // Inline quantity adjustment — reflects in UI only (use Edit Order for full changes)
+    setActiveOrders(prev => prev.map(o => {
+      if (o.id !== orderId) return o;
+      const newItemList = (o.itemList || []).map(itemStr => {
+        const match = itemStr.match(/^(.+) x(\d+)$/);
+        if (!match) return itemStr;
+        const name = match[1];
+        const qty = parseInt(match[2], 10);
+        const cleanName = name.replace(/\s*\([^)]+\)/g, '').trim();
+        if (cleanName !== nameToUpdate) return itemStr;
+        const newQty = qty + delta;
+        if (newQty <= 0) return null;
+        return `${name} x${newQty}`;
+      }).filter(Boolean);
+      return { ...o, itemList: newItemList };
+    }));
   };
 
   const markOrderReady = async (orderId) => {
@@ -147,17 +200,18 @@ export function AppProvider({ children }) {
   const closeOrder = async (orderId) => {
     const order = activeOrders.find(o => o.id === orderId);
     if (order) {
-      setOrderHistory(prev => [{ ...order, status: 'Paid', closedAt: new Date().toLocaleTimeString() }, ...prev]);
+      const paidOrder = { ...order, status: 'Paid', closedAt: new Date().toLocaleTimeString() };
+      setOrderHistory(prev => [paidOrder, ...prev]);
       setActiveOrders(prev => prev.filter(o => o.id !== orderId));
       setTables(prev => prev.map(t => t.order?.id === orderId ? { ...t, status: 'available', order: null } : t));
-      
+
       try {
         await fetch(`${API_BASE}/api/orders/${orderId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: 'Paid' })
         });
-      } catch (e) {}
+      } catch (e) { console.error('closeOrder API error', e); }
     }
   };
 
@@ -309,6 +363,7 @@ export function AppProvider({ children }) {
     <AppContext.Provider value={{
       appMode, setAppMode,
       tables, activeOrders, orderHistory, menuItems, groceryItems, storeInventory, storeOrders,
+      refreshData,
       placeOrder, updateOrder, updateOrderItemQuantity, markOrderReady, closeOrder, freeTable, updateTableStatus,
       addMenuItem, removeMenuItem, toggleMenuItemEnabled,
       addGroceryItem, toggleGroceryItem, removeGroceryItem, clearPurchasedGrocery,

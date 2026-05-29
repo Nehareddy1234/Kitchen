@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChefHat, CheckCircle, Clock, Printer, Edit } from 'lucide-react';
+import { ChefHat, CheckCircle, Clock, Printer, Edit, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import './Orders.css';
@@ -10,7 +10,7 @@ const statusConfig = {
 };
 
 export default function Orders() {
-  const { activeOrders, markOrderReady, closeOrder } = useApp();
+  const { activeOrders, markOrderReady, closeOrder, refreshData } = useApp();
   const navigate = useNavigate();
 
   return (
@@ -20,6 +20,9 @@ export default function Orders() {
           <h1>Active Orders</h1>
           <p className="text-muted">{activeOrders.length} order{activeOrders.length !== 1 ? 's' : ''} currently in progress</p>
         </div>
+        <button className="btn btn-icon" onClick={refreshData} title="Refresh orders">
+          <RefreshCw size={20} />
+        </button>
       </header>
 
       {activeOrders.length === 0 ? (
@@ -31,7 +34,7 @@ export default function Orders() {
       ) : (
         <div className="orders-grid">
           {activeOrders.map(order => {
-            const sc = statusConfig[order.status];
+            const sc = statusConfig[order.status] || { bg: '#eee', color: '#666', icon: null };
             return (
               <div key={order.id} className="order-card card">
                 <div className="order-card-header">
@@ -45,7 +48,7 @@ export default function Orders() {
                 </div>
 
                 <div className="order-items-list">
-                  {order.itemList.map((item, i) => (
+                  {(order.itemList || []).map((item, i) => (
                     <div key={i} className="order-item-row">{item}</div>
                   ))}
                 </div>
