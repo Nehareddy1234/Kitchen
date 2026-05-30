@@ -591,16 +591,19 @@ export default async function handler(req, res) {
             tableId: body.tableId ? parseInt(body.tableId) : null,
             total,
             status: 'Preparing',
-            items: {
-              create: enrichedCart.map(ci => ({
-                menuItemId: ci.menuItemId,
-                quantity: ci.quantity,
-                addOns: ci.addOns || null,
-              })),
-            },
           },
-          include: orderInclude,
         });
+
+        if (enrichedCart.length > 0) {
+          await prisma.orderItem.createMany({
+            data: enrichedCart.map(ci => ({
+              orderId: created.id,
+              menuItemId: ci.menuItemId,
+              quantity: ci.quantity,
+              addOns: ci.addOns || null,
+            })),
+          });
+        }
 
         // If a table was assigned, mark it as occupied
         if (body.tableId) {
@@ -610,7 +613,12 @@ export default async function handler(req, res) {
           });
         }
 
-        return send(res, 201, mapOrder(created));
+        const createdWithItems = await prisma.order.findUnique({
+          where: { id: created.id },
+          include: orderInclude,
+        });
+
+        return send(res, 201, mapOrder(createdWithItems));
       }
 
       /**
@@ -730,8 +738,5 @@ export default async function handler(req, res) {
       error: 'Internal server error',
       details: error.message,
     });
-  } finally {
-    // Release the connection back to PgBouncer after every request.
-    await prisma.$disconnect();
   }
 }
