@@ -46,7 +46,7 @@ export default function CustomerMenu() {
   const cartTotal = cart.reduce((sum, c) => sum + c.price * c.qty, 0);
   const cartCount = cart.reduce((sum, c) => sum + c.qty, 0);
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (cart.length === 0) return;
     const now = new Date();
 
@@ -64,9 +64,14 @@ export default function CustomerMenu() {
     const tableIdMatch = orderType === 'Dine-In' ? tableNo.match(/\d+/) : null;
     const tableId = tableIdMatch ? parseInt(tableIdMatch[0], 10) : null;
 
-    placeOrder(cartForOrder, tableId);
-    const genId = '#ORD-CUST-' + Date.now().toString().slice(-4);
-    setOrderId(genId);
+    let placedOrderId;
+    try {
+      placedOrderId = await placeOrder(cartForOrder, tableId);
+    } catch (err) {
+      alert(`Could not place order: ${err.message}`);
+      return;
+    }
+    setOrderId(placedOrderId ? `#${String(placedOrderId).slice(-8)}` : '#ORD-CUST');
     setCart([]);
     setOrderPlaced(true);
     setActiveTab('menu');

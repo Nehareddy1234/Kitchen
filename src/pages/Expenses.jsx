@@ -14,7 +14,6 @@ import {
 import './Expenses.css';
 
 const EXPENSES_RESET_VERSION = '2026-05-30-reset';
-const MOCK_INITIAL_EXPENSES = [];
 
 const CATEGORIES = [
   { name: 'Ingredients', color: '#ff7675', bg: 'rgba(255, 118, 117, 0.15)' },
@@ -25,6 +24,15 @@ const CATEGORIES = [
   { name: 'Miscellaneous', color: '#b2bec3', bg: 'rgba(178, 190, 195, 0.15)' },
 ];
 
+const REMOVED_SAMPLE_EXPENSES = new Set([
+  'Monthly Rent',
+  'Fresh Vegetables & Dairy',
+  'Staff Salaries',
+  'Electricity & Water Bill',
+  'Social Media Ads & Flyers',
+  'Kitchen Spoons & Plates replacement',
+]);
+
 export default function Expenses() {
   const [expenses, setExpenses] = useState(() => {
     const saved = localStorage.getItem('nk_expenses');
@@ -32,9 +40,10 @@ export default function Expenses() {
     if (resetVersion !== EXPENSES_RESET_VERSION) {
       localStorage.setItem('nk_expenses_reset_version', EXPENSES_RESET_VERSION);
       localStorage.removeItem('nk_expenses');
-      return MOCK_INITIAL_EXPENSES;
+      return [];
     }
-    return saved ? JSON.parse(saved) : MOCK_INITIAL_EXPENSES;
+    if (!saved) return [];
+    return JSON.parse(saved).filter(exp => !REMOVED_SAMPLE_EXPENSES.has(exp.description));
   });
 
   // State for adding new expense

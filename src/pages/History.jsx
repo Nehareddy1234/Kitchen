@@ -74,12 +74,10 @@ export default function History() {
     return matchesId || matchesNumber || matchesTable;
   });
 
-  const getPaymentMethod = (order) => order.paymentMethod || 'Cash';
-
   const totalRevenue = filteredByDate.reduce((sum, order) => sum + order.total, 0);
   const totalOrders = filteredByDate.length;
-  const cashTotal = filteredByDate.reduce((sum, order) => sum + (getPaymentMethod(order) === 'Cash' ? order.total : 0), 0);
-  const upiTotal = filteredByDate.reduce((sum, order) => sum + (getPaymentMethod(order) === 'UPI' ? order.total : 0), 0);
+  const cashTotal = filteredByDate.reduce((sum, order) => sum + (order.paymentMethod === 'Cash' ? order.total : 0), 0);
+  const upiTotal = filteredByDate.reduce((sum, order) => sum + (order.paymentMethod === 'UPI' ? order.total : 0), 0);
 
   const [showEODModal, setShowEODModal] = useState(false);
 
@@ -198,7 +196,7 @@ export default function History() {
                       <td><span className="table-badge">{order.table}</span></td>
                       <td>{order.itemList?.length || 0} items</td>
                       <td><strong className="price-label">₹{order.total}</strong></td>
-                      <td>{getPaymentMethod(order)}</td>
+                      <td>{order.paymentMethod || 'Cash'}</td>
                       <td>
                         <button
                           className="btn btn-outline detail-btn"
@@ -227,7 +225,7 @@ export default function History() {
               <div className="modal-body">
                 <div className="detail-row">
                   <span>Payment Method</span>
-                  <span className="status-paid-badge">{getPaymentMethod(selectedOrder)}</span>
+                  <span className="status-paid-badge">{selectedOrder.paymentMethod || 'Cash'}</span>
                 </div>
                 <div className="detail-row">
                   <span>Table/Type</span>

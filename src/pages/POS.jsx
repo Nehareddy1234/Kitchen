@@ -142,14 +142,19 @@ export default function POS() {
     return sum + (item.price + addOnPrice) * item.quantity;
   }, 0);
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (cart.length === 0) return;
     const tableId = selectedTable ? parseInt(selectedTable) : null;
-    
-    if (editOrderId) {
-      updateOrder(editOrderId, cart, tableId);
-    } else {
-      placeOrder(cart, tableId);
+
+    try {
+      if (editOrderId) {
+        await updateOrder(editOrderId, cart, tableId);
+      } else {
+        await placeOrder(cart, tableId);
+      }
+    } catch (err) {
+      alert(`Could not place order: ${err.message}`);
+      return;
     }
 
     setCart([]);

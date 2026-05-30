@@ -627,7 +627,6 @@ export default async function handler(req, res) {
             where: { id },
             data: { 
               status: body.status,
-              paymentMethod: body.status === 'Paid' ? (body.paymentMethod || 'Cash') : undefined,
               paidAt: body.status === 'Paid' ? new Date() : undefined
             },
             include: orderInclude,

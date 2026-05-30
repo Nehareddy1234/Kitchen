@@ -19,6 +19,15 @@ const initialTables = [
 // No hardcoded fallback — always load from the database
 const initialMenuItems = [];
 
+const mergeLocalActiveOrders = (previousOrders, backendOrders) => {
+  const localOrders = previousOrders.filter(order => String(order.id).startsWith('local-'));
+  const backendIds = new Set(backendOrders.map(order => order.id));
+  return [
+    ...localOrders.filter(order => !backendIds.has(order.id)),
+    ...backendOrders,
+  ];
+};
+
 export function AppProvider({ children }) {
   const [appMode, setAppMode] = useState('restaurant'); // 'restaurant' | 'grocery'
 
@@ -52,7 +61,8 @@ export function AppProvider({ children }) {
         if (tablesRes && tablesRes.ok) setTables(await tablesRes.json());
         if (ordersRes && ordersRes.ok) {
           const allOrders = await ordersRes.json();
-          setActiveOrders(allOrders.filter(o => o.status !== 'Paid'));
+          const backendActiveOrders = allOrders.filter(o => o.status !== 'Paid');
+          setActiveOrders(prev => mergeLocalActiveOrders(prev, backendActiveOrders));
           setOrderHistory(allOrders.filter(o => o.status === 'Paid'));
         }
         if (groceryRes && groceryRes.ok) setGroceryItems(await groceryRes.json());
@@ -93,7 +103,8 @@ export function AppProvider({ children }) {
       if (tablesRes && tablesRes.ok) setTables(await tablesRes.json());
       if (ordersRes && ordersRes.ok) {
         const allOrders = await ordersRes.json();
-        setActiveOrders(allOrders.filter(o => o.status !== 'Paid'));
+        const backendActiveOrders = allOrders.filter(o => o.status !== 'Paid');
+        setActiveOrders(prev => mergeLocalActiveOrders(prev, backendActiveOrders));
         setOrderHistory(allOrders.filter(o => o.status === 'Paid'));
       }
       if (groceryRes && groceryRes.ok) setGroceryItems(await groceryRes.json());
@@ -102,8 +113,74 @@ export function AppProvider({ children }) {
     }
   };
 
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      refreshData();
+    }, 5000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshData();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+  const buildLocalOrder = (cartItems, tableId, id = `local-${Date.now()}`) => {
+    const now = new Date();
+    const addOnTotal = (item) => ((item.addOns?.Roti || 0) * 15) + ((item.addOns?.Curry || 0) * 40);
+    const total = cartItems.reduce((sum, item) => sum + (item.price + addOnTotal(item)) * item.quantity, 0);
+    return {
+      id,
+      orderNumber: Date.now().toString().slice(-6),
+      table: tableId ? `Table ${tables.find(t => t.id === tableId)?.name || tableId}` : 'Takeaway',
+      itemList: cartItems.map(item => `${item.name} x${item.quantity}`),
+      total,
+      status: 'Preparing',
+      time: now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }),
+      createdAt: now.toISOString(),
+    };
+  };
+
+  const upsertActiveOrder = (order) => {
+    setActiveOrders(prev => {
+      const exists = prev.some(o => o.id === order.id);
+      return exists ? prev.map(o => o.id === order.id ? order : o) : [order, ...prev];
+    });
+  };
+
+  const setTableOrder = (tableId, order) => {
+    if (tableId) {
+      setTables(prev => prev.map(t =>
+        t.id === tableId ? { ...t, status: 'occupied', order } : t
+      ));
+    }
+  };
+
+  const removeOptimisticOrder = (orderId, tableId) => {
+    setActiveOrders(prev => prev.filter(order => order.id !== orderId));
+    if (tableId) {
+      setTables(prev => prev.map(t =>
+        t.id === tableId && t.order?.id === orderId
+          ? { ...t, status: 'available', order: null }
+          : t
+      ));
+    }
+  };
+
   // Place a new order
   const placeOrder = async (cartItems, tableId) => {
+    const tempId = `local-${Date.now()}`;
+    const optimisticOrder = buildLocalOrder(cartItems, tableId, tempId);
+    upsertActiveOrder(optimisticOrder);
+    setTableOrder(tableId, optimisticOrder);
+
     try {
       const res = await fetch(`${API_BASE}/api/orders`, {
         method: 'POST',
@@ -121,21 +198,20 @@ export function AppProvider({ children }) {
       });
       if (res.ok) {
         const newOrder = await res.json(); // already mapped: has itemList, table string, time
-        setActiveOrders(prev => [newOrder, ...prev]);
-        if (tableId) {
-          setTables(prev => prev.map(t =>
-            t.id === tableId ? { ...t, status: 'occupied', order: newOrder } : t
-          ));
-        }
+        setActiveOrders(prev => prev.map(o => o.id === tempId ? newOrder : o));
+        setTableOrder(tableId, newOrder);
         return newOrder.id;
       } else {
         const err = await res.json().catch(() => ({}));
         console.error('placeOrder API error:', err);
+        removeOptimisticOrder(tempId, tableId);
+        throw new Error(err.details || err.error || `Failed to place order (${res.status})`);
       }
     } catch (e) {
       console.error('Failed to place order via API', e);
+      removeOptimisticOrder(tempId, tableId);
+      throw e;
     }
-    return null;
   };
 
   const updateOrder = async (orderId, cartItems, tableId) => {

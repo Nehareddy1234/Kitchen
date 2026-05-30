@@ -83,11 +83,11 @@ export default function Analytics() {
       // Fallback to overall database averages
       const allDays = Object.values(dayStats).flat();
       if (allDays.length === 0) {
-        return { revenue: 1500, orders: 4, topItems: [{ name: 'Paneer Butter Masala', avgQty: 2 }, { name: 'Butter Naan', avgQty: 4 }] };
+        return { revenue: 0, orders: 0, topItems: [] };
       }
       const avgRev = Math.round(allDays.reduce((sum, r) => sum + r.revenue, 0) / allDays.length);
       const avgOrd = Math.round(allDays.reduce((sum, r) => sum + r.ordersCount, 0) / allDays.length);
-      return { revenue: avgRev, orders: avgOrd, topItems: [{ name: 'Paneer Butter Masala', avgQty: 2 }, { name: 'Butter Naan', avgQty: 4 }], isFallback: true };
+      return { revenue: avgRev, orders: avgOrd, topItems: [], isFallback: true };
     }
 
     const totalRev = records.reduce((sum, r) => sum + r.revenue, 0);
@@ -676,4 +676,3 @@ export default function Analytics() {
     </div>
   );
 }
-

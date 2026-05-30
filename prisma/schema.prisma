@@ -35,7 +35,6 @@ model Order {
 
   total  Int
   status String // Preparing | Ready | Paid
-  paymentMethod String?
 
   createdAt DateTime  @default(now())
   paidAt    DateTime?
