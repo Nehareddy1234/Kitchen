@@ -9,17 +9,63 @@ export default function History() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [dateFilter, setDateFilter] = useState('All');
 
-  const getActualDate = (dateStr) => {
+  const formatDateKey = (value) => {
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+
+    const parts = new Intl.DateTimeFormat('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(date);
+
+    const year = parts.find(part => part.type === 'year')?.value;
+    const month = parts.find(part => part.type === 'month')?.value;
+    const day = parts.find(part => part.type === 'day')?.value;
+    return year && month && day ? `${year}-${month}-${day}` : null;
+  };
+
+  const getOrderDateKey = (order) => {
+    const timestampKey = formatDateKey(order.paidAt || order.createdAt);
+    if (timestampKey) return timestampKey;
+
+    const dateStr = order.date;
     if (!dateStr || dateStr === 'Today') {
       const now = new Date();
       return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     }
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+
+    const match = String(dateStr).match(/^(\d{1,2})\s+([A-Za-z]{3,})\.?(?:\s+(\d{4}))?$/);
+    if (match) {
+      const monthMap = {
+        jan: '01', january: '01',
+        feb: '02', february: '02',
+        mar: '03', march: '03',
+        apr: '04', april: '04',
+        may: '05',
+        jun: '06', june: '06',
+        jul: '07', july: '07',
+        aug: '08', august: '08',
+        sep: '09', sept: '09', september: '09',
+        oct: '10', october: '10',
+        nov: '11', november: '11',
+        dec: '12', december: '12',
+      };
+      const day = match[1].padStart(2, '0');
+      const month = monthMap[match[2].toLowerCase()];
+      const year = match[3] || String(new Date().getFullYear());
+      if (month) return `${year}-${month}-${day}`;
+    }
+
     return dateStr;
   };
 
   const filteredByDate = dateFilter === 'All' 
     ? orderHistory 
-    : orderHistory.filter(o => getActualDate(o.date) === dateFilter);
+    : orderHistory.filter(o => getOrderDateKey(o) === dateFilter);
 
   const filteredHistory = filteredByDate.filter(order => {
     const matchesId = order.id.toLowerCase().includes(searchQuery.toLowerCase());
@@ -28,10 +74,12 @@ export default function History() {
     return matchesId || matchesNumber || matchesTable;
   });
 
+  const getPaymentMethod = (order) => order.paymentMethod || 'Cash';
+
   const totalRevenue = filteredByDate.reduce((sum, order) => sum + order.total, 0);
   const totalOrders = filteredByDate.length;
-  const cashTotal = filteredByDate.reduce((sum, order) => sum + (order.paymentMethod === 'Cash' ? order.total : 0), 0);
-  const upiTotal = filteredByDate.reduce((sum, order) => sum + (order.paymentMethod === 'UPI' ? order.total : 0), 0);
+  const cashTotal = filteredByDate.reduce((sum, order) => sum + (getPaymentMethod(order) === 'Cash' ? order.total : 0), 0);
+  const upiTotal = filteredByDate.reduce((sum, order) => sum + (getPaymentMethod(order) === 'UPI' ? order.total : 0), 0);
 
   const [showEODModal, setShowEODModal] = useState(false);
 
@@ -134,6 +182,7 @@ export default function History() {
                     <th>Items Count</th>
                     <th>Total Bill</th>
                     <th>Payment</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -148,8 +197,8 @@ export default function History() {
                       </td>
                       <td><span className="table-badge">{order.table}</span></td>
                       <td>{order.itemList?.length || 0} items</td>
-                      <td>{order.paymentMethod || 'Cash'}</td>
                       <td><strong className="price-label">₹{order.total}</strong></td>
+                      <td>{getPaymentMethod(order)}</td>
                       <td>
                         <button
                           className="btn btn-outline detail-btn"
@@ -178,7 +227,7 @@ export default function History() {
               <div className="modal-body">
                 <div className="detail-row">
                   <span>Payment Method</span>
-                  <span className="status-paid-badge">{selectedOrder.paymentMethod || 'Cash'}</span>
+                  <span className="status-paid-badge">{getPaymentMethod(selectedOrder)}</span>
                 </div>
                 <div className="detail-row">
                   <span>Table/Type</span>

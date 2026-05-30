@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, ShoppingCart, Trash2, CreditCard, Banknote, SmartphoneNfc } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import './GroceryPOS.css';
 
 // Colorful category palette
 const CATEGORY_COLORS = [
@@ -23,17 +24,12 @@ function CategoryPill({ cat, idx, isActive, onClick }) {
   return (
     <button
       onClick={onClick}
+      className="grocery-category-pill"
       style={{
-        whiteSpace: 'nowrap',
-        padding: '0.45rem 1.1rem',
-        borderRadius: '20px',
         border: '2px solid ' + (isActive ? color.border : 'transparent'),
         background: isActive ? color.bg : '#f1f3f5',
         color: isActive ? color.text : '#6c757d',
         fontWeight: isActive ? 700 : 500,
-        fontSize: '0.85rem',
-        cursor: 'pointer',
-        transition: 'all 0.18s',
         boxShadow: shadow,
         transform: isActive ? 'translateY(-2px)' : 'none',
       }}
@@ -50,30 +46,18 @@ function ProductCard({ item, onAdd }) {
       onClick={onAdd}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      className="grocery-product-card"
       style={{
-        cursor: 'pointer',
-        borderRadius: '12px',
-        overflow: 'hidden',
-        border: '1px solid var(--border-color)',
-        background: '#fff',
-        transition: 'transform 0.15s, box-shadow 0.15s',
         transform: hovered ? 'translateY(-3px)' : 'none',
         boxShadow: hovered ? '0 8px 20px rgba(0,0,0,0.1)' : '0 1px 4px rgba(0,0,0,0.04)',
       }}
     >
-      <img src={item.image} alt={item.name} style={{ width: '100%', height: '120px', objectFit: 'cover' }} />
-      <div style={{ padding: '0.75rem' }}>
-        <h3 style={{ fontSize: '0.9rem', margin: '0 0 0.35rem 0', fontWeight: 600, lineHeight: 1.3 }}>{item.name}</h3>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '1rem' }}>₹{item.price}</span>
-          <span style={{
-            fontSize: '0.7rem',
-            color: item.stock < 10 ? '#dc3545' : 'var(--text-muted)',
-            background: item.stock < 10 ? '#fde8e8' : 'var(--bg-color)',
-            padding: '0.15rem 0.4rem',
-            borderRadius: '6px',
-            fontWeight: 600,
-          }}>
+      <img src={item.image} alt={item.name} className="grocery-product-image" />
+      <div className="grocery-product-info">
+        <h3 className="grocery-product-title">{item.name}</h3>
+        <div className="grocery-product-footer">
+          <span className="grocery-product-price">₹{item.price}</span>
+          <span className={`grocery-product-stock-badge ${item.stock < 10 ? 'low-stock' : 'in-stock'}`}>
             Qty: {item.stock}
           </span>
         </div>
@@ -90,6 +74,7 @@ export default function GroceryPOS() {
   const [cart, setCart] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [activeTab, setActiveTab] = useState('menu'); // 'menu' or 'cart' on mobile viewports
 
   const categories = ['All', ...new Set(storeInventory.map(i => i.category))];
 
@@ -139,118 +124,154 @@ export default function GroceryPOS() {
       checkoutStoreOrder(cart, paymentMethod);
       setCart([]);
       setIsProcessing(false);
+      setActiveTab('menu');
       alert('Transaction Successful!');
     }, 600);
   };
 
   return (
-    <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', overflowY: 'auto' }}>
-
-      {/* Search Bar */}
-      <div style={{ background: '#fff', padding: '0.75rem 1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid var(--border-color)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-        <Search size={20} color="#999" />
-        <input
-          type="text"
-          placeholder="Scan barcode or search products..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          style={{ border: 'none', outline: 'none', width: '100%', fontSize: '1rem', background: 'transparent' }}
-          autoFocus
-        />
+    <div className="grocery-pos-container">
+      {/* Mobile Navigation Tabs */}
+      <div className="grocery-mobile-tabs">
+        <button 
+          className={`grocery-mobile-tab ${activeTab === 'menu' ? 'active' : ''}`}
+          onClick={() => setActiveTab('menu')}
+        >
+          Products
+        </button>
+        <button 
+          className={`grocery-mobile-tab ${activeTab === 'cart' ? 'active' : ''}`}
+          onClick={() => setActiveTab('cart')}
+        >
+          Checkout {cart.length > 0 && <span className="grocery-cart-badge" style={{ marginLeft: '0.4rem' }}>{cart.length}</span>}
+        </button>
       </div>
 
-      {/* Category Pills */}
-      <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
-        {categories.map((cat, idx) => (
-          <CategoryPill
-            key={cat}
-            cat={cat}
-            idx={idx}
-            isActive={selectedCategory === cat}
-            onClick={() => setSelectedCategory(cat)}
-          />
-        ))}
-      </div>
-
-      {/* Product Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '1rem' }}>
-        {filteredInventory.map(item => (
-          <ProductCard key={item.id} item={item} onAdd={() => addToCart(item)} />
-        ))}
-        {filteredInventory.length === 0 && (
-          <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-            No products available.
+      <div className={`grocery-layout ${activeTab === 'menu' ? 'show-menu' : 'show-cart'}`}>
+        {/* Left Catalog Section */}
+        <div className="grocery-catalog-section">
+          {/* Search Bar */}
+          <div className="grocery-search-bar">
+            <Search size={20} color="#999" />
+            <input
+              type="text"
+              placeholder="Scan barcode or search products..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="grocery-search-input"
+              autoFocus
+            />
           </div>
-        )}
-      </div>
 
-      {/* Cart Section */}
-      <div className="card" style={{ padding: '1.5rem' }}>
-        <h2 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', paddingBottom: '0.75rem', borderBottom: '1px solid var(--border-color)' }}>
-          <ShoppingCart size={20} />
-          Current Checkout
-          {cart.length > 0 && (
-            <span style={{ background: 'var(--primary)', color: '#fff', borderRadius: '50%', width: '22px', height: '22px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-              {cart.length}
-            </span>
-          )}
-        </h2>
-
-        {cart.length === 0 ? (
-          <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem 0' }}>
-            <ShoppingCart size={36} style={{ opacity: 0.2, margin: '0 auto 0.75rem auto' }} />
-            <p>Tap products above to add them here.</p>
-          </div>
-        ) : (
-          <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem 0', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {cart.map(item => (
-              <li key={item.id} style={{ display: 'flex', gap: '1rem', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
-                <img src={item.image} alt={item.name} style={{ width: '50px', height: '50px', borderRadius: '8px', objectFit: 'cover' }} />
-                <div style={{ flex: 1 }}>
-                  <h4 style={{ margin: '0 0 0.25rem 0', fontSize: '0.95rem' }}>{item.name}</h4>
-                  <span style={{ color: 'var(--primary)', fontWeight: 600 }}>₹{item.price}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--bg-color)', borderRadius: '20px', padding: '0.25rem 0.5rem' }}>
-                  <button onClick={() => updateCartQty(item.id, -1)} style={{ width: '28px', height: '28px', padding: 0, borderRadius: '50%', background: '#fff', border: '1px solid var(--border-color)', cursor: 'pointer', fontWeight: 700, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>-</button>
-                  <span style={{ fontWeight: 600, width: '20px', textAlign: 'center' }}>{item.quantity}</span>
-                  <button onClick={() => updateCartQty(item.id, 1)} style={{ width: '28px', height: '28px', padding: 0, borderRadius: '50%', background: '#fff', border: '1px solid var(--border-color)', cursor: 'pointer', fontWeight: 700, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
-                </div>
-                <button onClick={() => removeFromCart(item.id)} style={{ padding: '0.5rem', background: 'transparent', border: 'none', color: '#dc3545', cursor: 'pointer' }}>
-                  <Trash2 size={18} />
-                </button>
-              </li>
+          {/* Category Pills */}
+          <div className="grocery-category-tabs">
+            {categories.map((cat, idx) => (
+              <CategoryPill
+                key={cat}
+                cat={cat}
+                idx={idx}
+                isActive={selectedCategory === cat}
+                onClick={() => setSelectedCategory(cat)}
+              />
             ))}
-          </ul>
-        )}
+          </div>
 
-        {/* Payment + Checkout */}
-        <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1.25rem' }}>
-          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Payment Method</label>
-          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem' }}>
-            <button className={'btn ' + (paymentMethod === 'Cash' ? 'btn-primary' : 'btn-outline')} onClick={() => setPaymentMethod('Cash')} style={{ flex: 1, padding: '0.5rem', display: 'flex', justifyContent: 'center', gap: '0.4rem' }}>
-              <Banknote size={16} /> Cash
-            </button>
-            <button className={'btn ' + (paymentMethod === 'UPI' ? 'btn-primary' : 'btn-outline')} onClick={() => setPaymentMethod('UPI')} style={{ flex: 1, padding: '0.5rem', display: 'flex', justifyContent: 'center', gap: '0.4rem' }}>
-              <SmartphoneNfc size={16} /> UPI
-            </button>
-            <button className={'btn ' + (paymentMethod === 'Card' ? 'btn-primary' : 'btn-outline')} onClick={() => setPaymentMethod('Card')} style={{ flex: 1, padding: '0.5rem', display: 'flex', justifyContent: 'center', gap: '0.4rem' }}>
-              <CreditCard size={16} /> Card
+          {/* Product Grid */}
+          <div className="grocery-grid-scroll">
+            <div className="grocery-grid">
+              {filteredInventory.map(item => (
+                <ProductCard key={item.id} item={item} onAdd={() => addToCart(item)} />
+              ))}
+              {filteredInventory.length === 0 && (
+                <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                  No products available.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Cart Section */}
+        <div className="grocery-cart-panel">
+          <div className="grocery-cart-header">
+            <h2 className="grocery-cart-title">
+              <ShoppingCart size={20} />
+              Current Checkout
+              {cart.length > 0 && (
+                <span className="grocery-cart-badge">
+                  {cart.length}
+                </span>
+              )}
+            </h2>
+          </div>
+
+          <div className="grocery-cart-items">
+            {cart.length === 0 ? (
+              <div className="grocery-cart-empty">
+                <ShoppingCart size={36} style={{ opacity: 0.2, margin: '0 auto 0.75rem auto' }} />
+                <p>Tap products above to add them here.</p>
+              </div>
+            ) : (
+              <ul className="grocery-cart-list">
+                {cart.map(item => (
+                  <li key={item.id} className="grocery-cart-item">
+                    <img src={item.image} alt={item.name} className="grocery-cart-item-image" />
+                    <div className="grocery-cart-item-info">
+                      <h4 className="grocery-cart-item-name">{item.name}</h4>
+                      <span className="grocery-cart-item-price">₹{item.price}</span>
+                    </div>
+                    <div className="grocery-cart-item-actions">
+                      <button onClick={() => updateCartQty(item.id, -1)} className="grocery-cart-qty-btn">-</button>
+                      <span className="grocery-cart-qty-val">{item.quantity}</span>
+                      <button onClick={() => updateCartQty(item.id, 1)} className="grocery-cart-qty-btn">+</button>
+                    </div>
+                    <button onClick={() => removeFromCart(item.id)} className="grocery-cart-delete-btn">
+                      <Trash2 size={18} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+          )}
+          </div>
+
+          {/* Payment + Checkout Footer */}
+          <div className="grocery-cart-footer">
+            <label className="grocery-payment-label">Payment Method</label>
+            <div className="grocery-payment-methods">
+              <button className={'btn ' + (paymentMethod === 'Cash' ? 'btn-primary' : 'btn-outline')} onClick={() => setPaymentMethod('Cash')} style={{ flex: 1, padding: '0.55rem', display: 'flex', justifyContent: 'center', gap: '0.4rem' }}>
+                <Banknote size={16} /> Cash
+              </button>
+              <button className={'btn ' + (paymentMethod === 'UPI' ? 'btn-primary' : 'btn-outline')} onClick={() => setPaymentMethod('UPI')} style={{ flex: 1, padding: '0.55rem', display: 'flex', justifyContent: 'center', gap: '0.4rem' }}>
+                <SmartphoneNfc size={16} /> UPI
+              </button>
+              <button className={'btn ' + (paymentMethod === 'Card' ? 'btn-primary' : 'btn-outline')} onClick={() => setPaymentMethod('Card')} style={{ flex: 1, padding: '0.55rem', display: 'flex', justifyContent: 'center', gap: '0.4rem' }}>
+                <CreditCard size={16} /> Card
+              </button>
+            </div>
+            
+            <div className="grocery-cart-total-row">
+              <span className="grocery-cart-total-label">Total</span>
+              <strong className="grocery-cart-total-value">₹{cartTotal.toLocaleString()}</strong>
+            </div>
+            
+            <button
+              className="btn btn-primary grocery-checkout-btn"
+              onClick={handleCheckout}
+              disabled={cart.length === 0 || isProcessing}
+            >
+              {isProcessing ? 'Processing...' : 'Pay ₹' + cartTotal.toLocaleString()}
             </button>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-            <span style={{ fontSize: '1.1rem', fontWeight: 600 }}>Total</span>
-            <strong style={{ fontSize: '1.8rem', color: 'var(--text-main)' }}>₹{cartTotal.toLocaleString()}</strong>
-          </div>
-          <button
-            className="btn btn-primary"
-            style={{ width: '100%', padding: '1rem', fontSize: '1.1rem', fontWeight: 600, borderRadius: '10px', boxShadow: '0 4px 12px rgba(232,65,24,0.25)' }}
-            onClick={handleCheckout}
-            disabled={cart.length === 0 || isProcessing}
-          >
-            {isProcessing ? 'Processing...' : 'Pay ₹' + cartTotal.toLocaleString()}
-          </button>
         </div>
       </div>
+
+      {/* Floating Checkout Action Button (Mobile Products view only) */}
+      {activeTab === 'menu' && cart.length > 0 && (
+        <button className="grocery-mobile-floating-cart" onClick={() => setActiveTab('cart')}>
+          <ShoppingCart size={20} />
+          <span>View Checkout ({cart.length} items) • ₹{cartTotal.toLocaleString()}</span>
+        </button>
+      )}
     </div>
   );
 }

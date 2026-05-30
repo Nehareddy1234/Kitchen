@@ -1,0 +1,526 @@
+/* GroceryPOS.css */
+
+.grocery-pos-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  padding: 1.5rem;
+  gap: 1.5rem;
+}
+
+/* Outer layout split on desktop */
+.grocery-layout {
+  display: flex;
+  flex: 1;
+  gap: 1.5rem;
+  align-items: flex-start;
+  min-height: 0;
+  overflow: hidden;
+  width: 100%;
+}
+
+/* Left catalog section */
+.grocery-catalog-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  height: 100%;
+  min-width: 0;
+}
+
+/* Search bar */
+.grocery-search-bar {
+  background: #fff;
+  padding: 0.75rem 1.15rem;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+}
+
+.grocery-search-input {
+  border: none;
+  outline: none;
+  width: 100%;
+  font-size: 1rem;
+  background: transparent;
+  color: var(--text-main);
+}
+
+/* swipeable categories */
+.grocery-category-tabs {
+  display: flex;
+  gap: 0.6rem;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  padding: 0.5rem 0.25rem;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  flex-shrink: 0;
+}
+
+.grocery-category-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.grocery-category-pill {
+  white-space: nowrap;
+  padding: 0.55rem 1.15rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.18s;
+  flex-shrink: 0;
+}
+
+.grocery-category-pill:hover {
+  transform: translateY(-1px);
+}
+
+/* Product list scroll container */
+.grocery-grid-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.25rem;
+  min-height: 0;
+}
+
+/* Grid layout */
+.grocery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1.25rem;
+  padding-bottom: 2rem;
+}
+
+/* Product card */
+.grocery-product-card {
+  cursor: pointer;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  background: #fff;
+  transition: transform 0.15s, box-shadow 0.15s;
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important; /* Stretch cards to equal height in each row */
+}
+
+.grocery-product-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+.grocery-product-image {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  background-color: var(--bg-color);
+  flex-shrink: 0;
+}
+
+.grocery-product-info {
+  padding: 0.65rem 0.75rem;
+  display: flex !important;
+  flex-direction: column !important;
+  flex-grow: 1 !important;
+  justify-content: space-between !important;
+  gap: 0.25rem;
+}
+
+.grocery-product-title {
+  font-size: 0.85rem;
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text-main);
+  /* Line clamping */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  height: 2.7em; /* Force exactly 2 lines height */
+  flex-shrink: 0;
+}
+
+.grocery-product-footer {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-top: auto !important; /* Push footer elements to absolute bottom */
+  flex-shrink: 0;
+  padding-top: 0.25rem;
+}
+
+.grocery-product-price {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 0.95rem;
+}
+
+.grocery-product-stock-badge {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.grocery-product-stock-badge.low-stock {
+  color: #dc3545;
+  background: #fde8e8;
+}
+
+.grocery-product-stock-badge.in-stock {
+  color: var(--text-muted);
+  background: var(--bg-color);
+}
+
+/* Right checkout cart panel */
+.grocery-cart-panel {
+  width: 360px;
+  flex-shrink: 0;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-color);
+}
+
+.grocery-cart-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.grocery-cart-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.grocery-cart-badge {
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+/* Cart items list */
+.grocery-cart-items {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 1.5rem;
+}
+
+.grocery-cart-empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 2.5rem 0;
+}
+
+.grocery-cart-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.grocery-cart-item {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 1rem;
+}
+
+.grocery-cart-item-image {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  object-fit: cover;
+  background-color: var(--bg-color);
+}
+
+.grocery-cart-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.grocery-cart-item-name {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.grocery-cart-item-price {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.grocery-cart-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--bg-color);
+  border-radius: 20px;
+  padding: 0.25rem 0.5rem;
+}
+
+.grocery-cart-qty-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.grocery-cart-qty-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.grocery-cart-qty-val {
+  font-weight: 600;
+  width: 20px;
+  text-align: center;
+}
+
+.grocery-cart-delete-btn {
+  padding: 0.5rem;
+  background: transparent;
+  border: none;
+  color: #dc3545;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.15s;
+}
+
+.grocery-cart-delete-btn:hover {
+  opacity: 0.75;
+}
+
+/* Cart Footer checkout methods */
+.grocery-cart-footer {
+  border-top: 1px solid var(--border-color);
+  padding: 1.25rem 1.5rem;
+  background: #fafafa;
+  flex-shrink: 0;
+}
+
+.grocery-payment-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.03em;
+}
+
+.grocery-payment-methods {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.grocery-payment-btn {
+  flex: 1;
+  padding: 0.55rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.grocery-cart-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.grocery-cart-total-label {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.grocery-cart-total-value {
+  font-size: 1.7rem;
+  color: var(--text-main);
+  font-weight: 800;
+}
+
+.grocery-checkout-btn {
+  width: 100%;
+  padding: 1rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(232, 65, 24, 0.25);
+  transition: all 0.2s;
+}
+
+.grocery-checkout-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(232, 65, 24, 0.35);
+}
+
+/* Mobile Toggling subtabs */
+.grocery-mobile-tabs {
+  display: none;
+}
+
+/* Responsive Overrides */
+@media (max-width: 1024px) {
+  .grocery-pos-container {
+    padding: 0.75rem;
+    height: calc(100vh - 60px); /* Height minus top header */
+    gap: 1rem;
+  }
+
+  .grocery-mobile-tabs {
+    display: flex;
+    background: white;
+    border-bottom: 1px solid var(--border-color);
+    width: 100%;
+    margin-top: -0.5rem;
+    flex-shrink: 0;
+  }
+
+  .grocery-mobile-tab {
+    flex: 1;
+    text-align: center;
+    padding: 1rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .grocery-mobile-tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+    background-color: rgba(232, 65, 24, 0.02);
+  }
+
+  .grocery-layout {
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .grocery-layout.show-menu .grocery-catalog-section {
+    display: flex;
+  }
+
+  .grocery-layout.show-menu .grocery-cart-panel {
+    display: none;
+  }
+
+  .grocery-layout.show-cart .grocery-catalog-section {
+    display: none;
+  }
+
+  .grocery-layout.show-cart .grocery-cart-panel {
+    display: flex;
+    width: 100%;
+    max-width: 100%;
+    box-shadow: none;
+    height: 100%;
+  }
+
+  .grocery-catalog-section {
+    height: 100%;
+  }
+
+  .grocery-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    padding-bottom: 5rem;
+  }
+
+  .grocery-product-image {
+    height: 100px;
+  }
+
+  /* Floating View Checkout action button on catalog tab */
+  .grocery-mobile-floating-cart {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    position: fixed;
+    bottom: 1.5rem;
+    left: 1rem;
+    right: 1rem;
+    background: linear-gradient(135deg, var(--primary) 0%, #ff6b6b 100%);
+    color: white;
+    border: none;
+    padding: 1rem;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(232, 65, 24, 0.4);
+    z-index: 100;
+    transition: transform 0.2s, box-shadow 0.2s;
+    animation: groceryBounceIn 0.3s ease;
+  }
+
+  .grocery-mobile-floating-cart:active {
+    transform: scale(0.97);
+  }
+
+  @keyframes groceryBounceIn {
+    0% { transform: scale(0.9); opacity: 0; }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+}

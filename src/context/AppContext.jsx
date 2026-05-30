@@ -10,6 +10,10 @@ const initialTables = [
   { id: 1, name: 'T1', capacity: 4, status: 'available', order: null },
   { id: 2, name: 'T2', capacity: 2, status: 'available', order: null },
   { id: 3, name: 'T3', capacity: 6, status: 'available', order: null },
+  { id: 4, name: 'T4', capacity: 4, status: 'available', order: null },
+  { id: 5, name: 'T5', capacity: 4, status: 'available', order: null },
+  { id: 6, name: 'T6', capacity: 6, status: 'available', order: null },
+  { id: 7, name: 'T7', capacity: 2, status: 'available', order: null },
 ];
 
 // No hardcoded fallback — always load from the database

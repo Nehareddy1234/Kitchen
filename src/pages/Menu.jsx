@@ -182,54 +182,109 @@ export default function Menu() {
             {menuItems.length === 0 ? (
               <p className="empty-msg">No dishes in the menu. Add one above!</p>
             ) : (
-              <table className="menu-items-table">
-                <thead>
-                  <tr>
-                    <th>Dish</th>
-                    <th>Category</th>
-                    <th>Price</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {menuItems.map(item => (
-                    <tr key={item.id} className={item.enabled ? '' : 'item-disabled'}>
-                      <td>
-                        <div className="table-dish-info">
-                          <div className="dish-img" style={{ backgroundImage: `url("${item.image}"), url("https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&q=80&w=200&h=200")` }}></div>
-                          <div className="dish-details">
-                            <span className="dish-name">{item.name}</span>
-                            <span className="dish-mobile-category">{item.category}</span>
+              <>
+                {/* Desktop Table View */}
+                <table className="menu-items-table desktop-table">
+                  <thead>
+                    <tr>
+                      <th>Dish</th>
+                      <th>Category</th>
+                      <th>Price</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {menuItems.map(item => (
+                      <tr key={item.id} className={item.enabled ? '' : 'item-disabled'}>
+                        <td>
+                          <div className="table-dish-info">
+                            <div className="dish-img" style={{ backgroundImage: `url("${item.image}"), url("https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&q=80&w=200&h=200")` }}></div>
+                            <div className="dish-details">
+                              <span className="dish-name">{item.name}</span>
+                              <span className="dish-mobile-category">{item.category}</span>
+                            </div>
                           </div>
+                        </td>
+                        <td>
+                          <span className="dish-category-badge">{item.category}</span>
+                        </td>
+                        <td>
+                          <strong className="dish-price">₹{item.price}</strong>
+                        </td>
+                        <td>
+                          <button
+                            className={`status-toggle-btn ${item.enabled ? 'enabled' : 'disabled'}`}
+                            onClick={() => toggleMenuItemEnabled(item.id)}
+                            title={item.enabled ? 'Click to Disable' : 'Click to Enable'}
+                          >
+                            {item.enabled ? (
+                              <>
+                                <ToggleRight size={24} color="var(--success)" />
+                                <span className="status-text">Active</span>
+                              </>
+                            ) : (
+                              <>
+                                <ToggleLeft size={24} color="var(--text-muted)" />
+                                <span className="status-text">Disabled</span>
+                              </>
+                            )}
+                          </button>
+                        </td>
+                        <td>
+                          <div className="dish-actions">
+                          <button
+                            className="edit-dish-btn"
+                            onClick={() => handleStartEdit(item)}
+                            title="Edit Dish"
+                          >
+                            <Edit size={16} />
+                          </button>
+                          <button
+                            className="delete-dish-btn"
+                            onClick={async () => {
+                              if (window.confirm(`Are you sure you want to delete ${item.name}?`)) {
+                                try {
+                                  await removeMenuItem(item.id);
+                                } catch (err) {
+                                  setError(`Failed to remove item: ${err.message}`);
+                                }
+                              }
+                            }}
+                            title="Remove from Menu"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                
+                {/* Mobile Card View */}
+                <div className="mobile-items-list">
+                  {menuItems.map(item => (
+                    <div key={item.id} className={`mobile-item-card ${item.enabled ? '' : 'item-disabled'}`}>
+                      <div className="mobile-item-header">
+                        <div className="mobile-item-info">
+                          <span className="dish-name">{item.name}</span>
+                          <span className="dish-category-badge">{item.category}</span>
                         </div>
-                      </td>
-                      <td>
-                        <span className="dish-category-badge">{item.category}</span>
-                      </td>
-                      <td>
                         <strong className="dish-price">₹{item.price}</strong>
-                      </td>
-                      <td>
+                      </div>
+                      <div className="mobile-item-actions">
                         <button
                           className={`status-toggle-btn ${item.enabled ? 'enabled' : 'disabled'}`}
                           onClick={() => toggleMenuItemEnabled(item.id)}
                           title={item.enabled ? 'Click to Disable' : 'Click to Enable'}
                         >
                           {item.enabled ? (
-                            <>
-                              <ToggleRight size={24} color="var(--success)" />
-                              <span className="status-text">Active</span>
-                            </>
+                            <ToggleRight size={20} color="var(--success)" />
                           ) : (
-                            <>
-                              <ToggleLeft size={24} color="var(--text-muted)" />
-                              <span className="status-text">Disabled</span>
-                            </>
+                            <ToggleLeft size={20} color="var(--text-muted)" />
                           )}
                         </button>
-                      </td>
-                      <td style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
                         <button
                           className="edit-dish-btn"
                           onClick={() => handleStartEdit(item)}
@@ -252,11 +307,11 @@ export default function Menu() {
                         >
                           <Trash2 size={16} />
                         </button>
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              </>
             )}
           </div>
         </div>

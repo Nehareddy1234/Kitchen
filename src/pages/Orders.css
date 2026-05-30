@@ -139,3 +139,24 @@
 .payment-dialog .btn {
   flex: 1;
 }
+
+/* Responsive adjustments for small screens */
+@media (max-width: 480px) {
+  .orders-page {
+    padding: 1rem;
+  }
+  .orders-header h1 {
+    font-size: 1.2rem;
+  }
+  .orders-grid {
+    grid-template-columns: 1fr;
+  }
+  .order-card {
+    padding: 1rem;
+    font-size: 0.9rem;
+  }
+  .order-id, .order-table, .order-total, .order-time {
+    font-size: 0.9rem;
+  }
+}
+

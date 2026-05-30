@@ -20,6 +20,23 @@ export const prisma =
 // Always cache — even in production (Vercel warm instances)
 globalForPrisma.prisma = prisma;
 
+const DEFAULT_TABLES = [
+  { id: 1, name: 'T1', capacity: 4, status: 'available' },
+  { id: 2, name: 'T2', capacity: 2, status: 'available' },
+  { id: 3, name: 'T3', capacity: 6, status: 'available' },
+  { id: 4, name: 'T4', capacity: 4, status: 'available' },
+  { id: 5, name: 'T5', capacity: 4, status: 'available' },
+  { id: 6, name: 'T6', capacity: 6, status: 'available' },
+  { id: 7, name: 'T7', capacity: 2, status: 'available' },
+];
+
+async function ensureDefaultTables() {
+  await prisma.table.createMany({
+    data: DEFAULT_TABLES,
+    skipDuplicates: true,
+  });
+}
+
 /**
  * Helper to parse JSON body
  */
@@ -369,6 +386,8 @@ export default async function handler(req, res) {
       };
 
       if (method === 'GET') {
+        await ensureDefaultTables();
+
         if (id) {
           const table = await prisma.table.findUnique({
             where: { id },
@@ -608,6 +627,7 @@ export default async function handler(req, res) {
             where: { id },
             data: { 
               status: body.status,
+              paymentMethod: body.status === 'Paid' ? (body.paymentMethod || 'Cash') : undefined,
               paidAt: body.status === 'Paid' ? new Date() : undefined
             },
             include: orderInclude,

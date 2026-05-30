@@ -13,14 +13,8 @@ import {
 } from 'lucide-react';
 import './Expenses.css';
 
-const MOCK_INITIAL_EXPENSES = [
-  { id: 1, description: 'Monthly Rent', category: 'Rent', amount: 25000, date: '2026-05-01' },
-  { id: 2, description: 'Fresh Vegetables & Dairy', category: 'Ingredients', amount: 18500, date: '2026-05-15' },
-  { id: 3, description: 'Staff Salaries', category: 'Salaries', amount: 48000, date: '2026-05-28' },
-  { id: 4, description: 'Electricity & Water Bill', category: 'Utilities', amount: 4200, date: '2026-05-10' },
-  { id: 5, description: 'Social Media Ads & Flyers', category: 'Marketing', amount: 3000, date: '2026-05-05' },
-  { id: 6, description: 'Kitchen Spoons & Plates replacement', category: 'Miscellaneous', amount: 1200, date: '2026-05-20' },
-];
+const EXPENSES_RESET_VERSION = '2026-05-30-reset';
+const MOCK_INITIAL_EXPENSES = [];
 
 const CATEGORIES = [
   { name: 'Ingredients', color: '#ff7675', bg: 'rgba(255, 118, 117, 0.15)' },
@@ -34,6 +28,12 @@ const CATEGORIES = [
 export default function Expenses() {
   const [expenses, setExpenses] = useState(() => {
     const saved = localStorage.getItem('nk_expenses');
+    const resetVersion = localStorage.getItem('nk_expenses_reset_version');
+    if (resetVersion !== EXPENSES_RESET_VERSION) {
+      localStorage.setItem('nk_expenses_reset_version', EXPENSES_RESET_VERSION);
+      localStorage.removeItem('nk_expenses');
+      return MOCK_INITIAL_EXPENSES;
+    }
     return saved ? JSON.parse(saved) : MOCK_INITIAL_EXPENSES;
   });
 

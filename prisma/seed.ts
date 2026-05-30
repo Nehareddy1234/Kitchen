@@ -22,6 +22,10 @@ async function main() {
       { id: 1, name: 'T1', capacity: 4, status: 'available' },
       { id: 2, name: 'T2', capacity: 2, status: 'available' },
       { id: 3, name: 'T3', capacity: 6, status: 'available' },
+      { id: 4, name: 'T4', capacity: 4, status: 'available' },
+      { id: 5, name: 'T5', capacity: 4, status: 'available' },
+      { id: 6, name: 'T6', capacity: 6, status: 'available' },
+      { id: 7, name: 'T7', capacity: 2, status: 'available' },
     ],
     skipDuplicates: true,
   });

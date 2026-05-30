@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ShoppingCart, Search, Minus, Plus, Trash2, Banknote, CreditCard, SmartphoneNfc, CheckCircle2, LogOut } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
+import './CustomerMenu.css';
 
 export default function CustomerMenu() {
   const { menuItems, placeOrder } = useApp();
@@ -15,6 +16,7 @@ export default function CustomerMenu() {
   const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderId, setOrderId] = useState('');
+  const [activeTab, setActiveTab] = useState('menu'); // 'menu' or 'cart' on mobile viewports
 
   const categories = ['All', ...new Set(menuItems.filter(i => i.enabled !== false).map(i => i.category))];
 
@@ -67,6 +69,7 @@ export default function CustomerMenu() {
     setOrderId(genId);
     setCart([]);
     setOrderPlaced(true);
+    setActiveTab('menu');
   };
 
   if (orderPlaced) {
@@ -99,94 +102,70 @@ export default function CustomerMenu() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f8f9fa', display: 'flex', flexDirection: 'column' }}>
+    <div className="customer-menu-container">
       {/* Top Bar */}
-      <header style={{
-        background: 'linear-gradient(135deg, #1a1a2e, #16213e)',
-        padding: '1rem 1.5rem',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        position: 'sticky', top: 0, zIndex: 50,
-        boxShadow: '0 2px 12px rgba(0,0,0,0.2)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <span style={{ fontSize: '1.5rem' }}>🍽️</span>
+      <header className="customer-header">
+        <div className="customer-brand">
+          <span className="customer-brand-icon">🍽️</span>
           <div>
-            <h1 style={{ color: '#fff', fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>Neha's Kitchen</h1>
-            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', margin: 0 }}>Welcome, {currentUser?.displayName}</p>
+            <h1 className="customer-brand-title">Neha's Kitchen</h1>
+            <p className="customer-brand-welcome">Welcome, {currentUser?.displayName}</p>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{
-            background: 'rgba(255,255,255,0.1)', borderRadius: '12px',
-            padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem',
-            color: '#fff', cursor: 'pointer',
-          }}>
+        <div className="customer-header-actions">
+          <div className="customer-cart-badge-btn" onClick={() => setActiveTab('cart')}>
             <ShoppingCart size={20} />
-            <span style={{ fontWeight: 700 }}>{cartCount} items</span>
+            <span style={{ fontWeight: 700 }}>Cart</span>
             {cartCount > 0 && (
-              <span style={{
-                background: '#e84118', color: '#fff', borderRadius: '50%',
-                width: '20px', height: '20px', fontSize: '0.72rem',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700,
-              }}>{cartCount}</span>
+              <span className="customer-cart-count">{cartCount}</span>
             )}
           </div>
 
-          <button
-            onClick={logout}
-            style={{
-              background: 'rgba(232,65,24,0.15)',
-              border: '1px solid rgba(232,65,24,0.4)',
-              borderRadius: '12px',
-              padding: '0.5rem 1.05rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              color: '#ff4d4d',
-              fontWeight: 700,
-              cursor: 'pointer',
-              fontSize: '0.85rem',
-              transition: 'background 0.2s',
-            }}
-          >
+          <button onClick={logout} className="customer-logout-btn">
             <LogOut size={16} /> Logout
           </button>
         </div>
       </header>
 
-      <div style={{ display: 'flex', flex: 1, gap: '0', maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '1.5rem', gap: '1.5rem', alignItems: 'flex-start' }}>
-        {/* Menu Section */}
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      {/* Mobile Navigation Tabs */}
+      <div className="customer-mobile-tabs">
+        <button 
+          className={`customer-mobile-tab ${activeTab === 'menu' ? 'active' : ''}`}
+          onClick={() => setActiveTab('menu')}
+        >
+          Menu
+        </button>
+        <button 
+          className={`customer-mobile-tab ${activeTab === 'cart' ? 'active' : ''}`}
+          onClick={() => setActiveTab('cart')}
+        >
+          Current Order {cartCount > 0 && <span className="customer-cart-count" style={{ marginLeft: '0.4rem' }}>{cartCount}</span>}
+        </button>
+      </div>
 
+      <div className={`customer-layout ${activeTab === 'menu' ? 'show-menu' : 'show-cart'}`}>
+        {/* Menu Section */}
+        <div className="customer-menu-section">
           {/* Search */}
-          <div style={{ background: '#fff', borderRadius: '12px', padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid #dee2e6', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+          <div className="customer-search-bar">
             <Search size={18} color="#adb5bd" />
             <input
               type="text"
               placeholder="Search dishes..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              style={{ border: 'none', outline: 'none', flex: 1, fontSize: '0.95rem' }}
+              className="customer-search-input"
             />
           </div>
 
           {/* Category Tabs */}
-          <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
+          <div className="customer-category-tabs">
             {categories.map(cat => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                style={{
-                  whiteSpace: 'nowrap', padding: '0.5rem 1.1rem',
-                  borderRadius: '20px', border: 'none', cursor: 'pointer',
-                  background: selectedCategory === cat ? '#e84118' : '#fff',
-                  color: selectedCategory === cat ? '#fff' : '#6c757d',
-                  fontWeight: selectedCategory === cat ? 700 : 500,
-                  fontSize: '0.85rem',
-                  boxShadow: selectedCategory === cat ? '0 4px 12px rgba(232,65,24,0.3)' : '0 1px 4px rgba(0,0,0,0.06)',
-                  transition: 'all 0.18s',
-                }}
+                className={`customer-category-tab ${selectedCategory === cat ? 'active' : ''}`}
               >
                 {cat}
               </button>
@@ -194,156 +173,130 @@ export default function CustomerMenu() {
           </div>
 
           {/* Items Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem' }}>
-            {filteredItems.map(item => (
-              <div
-                key={item.id}
-                style={{
-                  background: '#fff', borderRadius: '16px', overflow: 'hidden',
-                  border: '1px solid #f1f3f5',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                  display: 'flex', flexDirection: 'column',
-                }}
-              >
-                <div style={{
-                  height: '130px', background: 'linear-gradient(135deg, #f8f9fa, #e9ecef)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '2.5rem',
-                }}>
-                  🍛
-                </div>
-                <div style={{ padding: '0.85rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                  <h3 style={{ fontSize: '0.9rem', fontWeight: 700, margin: '0 0 0.25rem 0', color: '#1a1a2e', lineHeight: 1.3 }}>{item.name}</h3>
-                  <span style={{ fontSize: '0.75rem', color: '#adb5bd', marginBottom: 'auto' }}>{item.category}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.75rem' }}>
-                    <strong style={{ color: '#e84118', fontSize: '1rem' }}>₹{item.price}</strong>
-                    <button
-                      onClick={() => addToCart(item)}
-                      style={{
-                        background: '#e84118', color: '#fff', border: 'none',
-                        borderRadius: '8px', padding: '0.35rem 0.75rem',
-                        fontWeight: 700, fontSize: '1.2rem', cursor: 'pointer',
-                        lineHeight: 1,
-                      }}
-                    >+</button>
+          <div className="customer-grid-scroll">
+            <div className="customer-grid">
+              {filteredItems.map(item => (
+                <div key={item.id} className="customer-dish-card">
+                  <div className="customer-dish-image-placeholder">
+                    🍛
+                  </div>
+                  <div className="customer-dish-info">
+                    <h3 className="customer-dish-name">{item.name}</h3>
+                    <span className="customer-dish-category">{item.category}</span>
+                    <div className="customer-dish-footer">
+                      <strong className="customer-dish-price">₹{item.price}</strong>
+                      <button
+                        onClick={() => addToCart(item)}
+                        className="customer-dish-add-btn"
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Cart Panel */}
-        <div style={{ width: '320px', flexShrink: 0, position: 'sticky', top: '90px' }}>
-          <div style={{ background: '#fff', borderRadius: '20px', boxShadow: '0 8px 32px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
-            <div style={{ padding: '1.25rem', borderBottom: '1px solid #f1f3f5', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <ShoppingCart size={20} color="#e84118" />
-              <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>Your Order</h2>
-            </div>
+        <div className="customer-cart-panel">
+          <div className="customer-cart-header">
+            <ShoppingCart size={20} color="#e84118" />
+            <h2 className="customer-cart-title">Your Order</h2>
+          </div>
 
-            {/* Order Type */}
-            <div style={{ padding: '1rem', borderBottom: '1px solid #f1f3f5' }}>
-              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                {['Dine-In', 'Takeaway'].map(type => (
-                  <button
-                    key={type}
-                    onClick={() => setOrderType(type)}
-                    style={{
-                      flex: 1, padding: '0.5rem', borderRadius: '8px', border: 'none', cursor: 'pointer',
-                      background: orderType === type ? '#1a1a2e' : '#f8f9fa',
-                      color: orderType === type ? '#fff' : '#6c757d',
-                      fontWeight: 600, fontSize: '0.85rem', transition: 'all 0.15s',
-                    }}
-                  >{type}</button>
-                ))}
+          {/* Order Type */}
+          <div className="customer-cart-type-selector">
+            <div className="customer-cart-type-buttons">
+              {['Dine-In', 'Takeaway'].map(type => (
+                <button
+                  key={type}
+                  onClick={() => setOrderType(type)}
+                  className={`customer-cart-type-btn ${orderType === type ? 'active' : ''}`}
+                >{type}</button>
+              ))}
+            </div>
+            {orderType === 'Dine-In' && (
+              <input
+                type="text"
+                value={tableNo}
+                onChange={e => setTableNo(e.target.value)}
+                placeholder="Table number / name"
+                className="customer-cart-table-input"
+              />
+            )}
+          </div>
+
+          {/* Cart Items */}
+          <div className="customer-cart-items">
+            {cart.length === 0 ? (
+              <div className="customer-cart-empty">
+                <ShoppingCart size={32} style={{ opacity: 0.3, marginBottom: '0.5rem' }} />
+                <p>Tap + to add items</p>
               </div>
-              {orderType === 'Dine-In' && (
-                <input
-                  type="text"
-                  value={tableNo}
-                  onChange={e => setTableNo(e.target.value)}
-                  placeholder="Table number / name"
-                  style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #dee2e6', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
-                />
-              )}
-            </div>
-
-            {/* Cart Items */}
-            <div style={{ maxHeight: '280px', overflowY: 'auto', padding: '0.75rem 1rem' }}>
-              {cart.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '2rem 0', color: '#adb5bd' }}>
-                  <ShoppingCart size={32} style={{ opacity: 0.3, marginBottom: '0.5rem' }} />
-                  <p style={{ fontSize: '0.85rem' }}>Tap + to add items</p>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {cart.map(item => (
-                    <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <div style={{ flex: 1 }}>
-                        <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600 }}>{item.name}</p>
-                        <p style={{ margin: 0, fontSize: '0.8rem', color: '#e84118', fontWeight: 600 }}>₹{item.price * item.qty}</p>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <button onClick={() => updateQty(item.id, -1)} style={{ width: '26px', height: '26px', borderRadius: '50%', border: '1px solid #dee2e6', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}><Minus size={12} /></button>
-                        <span style={{ fontWeight: 700, minWidth: '20px', textAlign: 'center', fontSize: '0.9rem' }}>{item.qty}</span>
-                        <button onClick={() => updateQty(item.id, 1)} style={{ width: '26px', height: '26px', borderRadius: '50%', border: '1px solid #dee2e6', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}><Plus size={12} /></button>
-                      </div>
-                      <button onClick={() => removeItem(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc3545', padding: '0.25rem' }}><Trash2 size={14} /></button>
+            ) : (
+              <div className="customer-cart-list">
+                {cart.map(item => (
+                  <div key={item.id} className="customer-cart-item">
+                    <div className="customer-cart-item-info">
+                      <p className="customer-cart-item-name">{item.name}</p>
+                      <p className="customer-cart-item-price">₹{item.price * item.qty}</p>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Payment + Total + CTA */}
-            <div style={{ padding: '1rem', borderTop: '1px solid #f1f3f5', background: '#fafafa' }}>
-              <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#adb5bd', marginBottom: '0.5rem' }}>PAYMENT</p>
-              <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1rem' }}>
-                {[
-                  { id: 'Cash', icon: <Banknote size={14} /> },
-                  { id: 'UPI', icon: <SmartphoneNfc size={14} /> },
-                  { id: 'Card', icon: <CreditCard size={14} /> },
-                ].map(({ id, icon }) => (
-                  <button
-                    key={id}
-                    onClick={() => setPaymentMethod(id)}
-                    style={{
-                      flex: 1, padding: '0.4rem', borderRadius: '8px', border: 'none', cursor: 'pointer',
-                      background: paymentMethod === id ? '#1a1a2e' : '#fff',
-                      color: paymentMethod === id ? '#fff' : '#6c757d',
-                      fontWeight: 600, fontSize: '0.75rem',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem',
-                      boxShadow: '0 1px 4px rgba(0,0,0,0.06)', transition: 'all 0.15s',
-                    }}
-                  >
-                    {icon} {id}
-                  </button>
+                    <div className="customer-cart-item-actions">
+                      <button onClick={() => updateQty(item.id, -1)} className="customer-cart-qty-btn"><Minus size={12} /></button>
+                      <span className="customer-cart-item-qty">{item.qty}</span>
+                      <button onClick={() => updateQty(item.id, 1)} className="customer-cart-qty-btn"><Plus size={12} /></button>
+                    </div>
+                    <button onClick={() => removeItem(item.id)} className="customer-cart-item-delete"><Trash2 size={14} /></button>
+                  </div>
                 ))}
               </div>
+            )}
+          </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                <span style={{ fontWeight: 600 }}>Total</span>
-                <strong style={{ fontSize: '1.2rem', color: '#1a1a2e' }}>₹{cartTotal.toLocaleString()}</strong>
-              </div>
-
-              <button
-                onClick={handlePlaceOrder}
-                disabled={cart.length === 0}
-                style={{
-                  width: '100%', padding: '0.9rem', borderRadius: '12px', border: 'none',
-                  background: cart.length === 0 ? '#dee2e6' : 'linear-gradient(135deg, #e84118, #c0392b)',
-                  color: '#fff', fontWeight: 700, fontSize: '1rem',
-                  cursor: cart.length === 0 ? 'not-allowed' : 'pointer',
-                  boxShadow: cart.length > 0 ? '0 4px 16px rgba(232,65,24,0.3)' : 'none',
-                  transition: 'all 0.2s',
-                }}
-              >
-                Place Order
-              </button>
+          {/* Payment + Total + CTA */}
+          <div className="customer-cart-footer">
+            <p className="customer-payment-title">PAYMENT</p>
+            <div className="customer-payment-methods">
+              {[
+                { id: 'Cash', icon: <Banknote size={14} /> },
+                { id: 'UPI', icon: <SmartphoneNfc size={14} /> },
+                { id: 'Card', icon: <CreditCard size={14} /> },
+              ].map(({ id, icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setPaymentMethod(id)}
+                  className={`customer-payment-btn ${paymentMethod === id ? 'active' : ''}`}
+                >
+                  {icon} {id}
+                </button>
+              ))}
             </div>
+
+            <div className="customer-cart-total-row">
+              <span className="customer-cart-total-label">Total</span>
+              <strong className="customer-cart-total-value">₹{cartTotal.toLocaleString()}</strong>
+            </div>
+
+            <button
+              onClick={handlePlaceOrder}
+              disabled={cart.length === 0}
+              className="customer-cart-checkout-btn"
+            >
+              Place Order
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Floating Checkout Button (Mobile Menu Tab Only) */}
+      {activeTab === 'menu' && cartCount > 0 && (
+        <button className="customer-mobile-floating-cart" onClick={() => setActiveTab('cart')}>
+          <ShoppingCart size={20} />
+          <span>View Order ({cartCount} items) • ₹{cartTotal.toLocaleString()}</span>
+        </button>
+      )}
     </div>
   );
 }

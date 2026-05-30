@@ -30,13 +30,12 @@ export default function Dashboard() {
   const occupied  = tables.filter(t => t.status === 'occupied').length;
   const total     = tables.length;
   const todayRevenue = orderHistory.reduce((s, o) => s + o.total, 0);
-  const baseRevenue  = 8450;
 
   const stats = [
-    { label: "Today's Revenue",  value: `₹${(baseRevenue + todayRevenue).toLocaleString()}`, change: '+12%', icon: <TrendingUp size={22} />, color: '#e84118' },
+    { label: "Today's Revenue",  value: `₹${todayRevenue.toLocaleString()}`, change: '', icon: <TrendingUp size={22} />, color: '#e84118' },
     { label: 'Active Orders',    value: activeOrders.length, change: '', icon: <ShoppingBag size={22} />, color: '#0097e6' },
     { label: 'Tables Occupied',  value: `${occupied}/${total}`, change: '', icon: <Users size={22} />, color: '#8c7ae6' },
-    { label: 'Avg. Order Time',  value: '18 min', change: '-2 min', icon: <Clock size={22} />, color: '#4cd137' },
+    { label: 'Avg. Order Time',  value: '0 min', change: '', icon: <Clock size={22} />, color: '#4cd137' },
   ];
 
   // Combine active and recent history for the table preview
@@ -177,3 +176,4 @@ export default function Dashboard() {
     </div>
   );
 }
+

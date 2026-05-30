@@ -1,8 +1,8 @@
 .menu-management-page {
-  padding: 2rem;
+  padding: 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
   overflow-y: auto;
   overflow-x: hidden;
   height: 100%;
@@ -18,7 +18,7 @@
   overflow-y: auto;
   height: 100%;
   position: relative;
-  padding-bottom: 80px; /* Space for floating action button */
+  padding-bottom: 80px;
 }
 
 .menu-management-header h1 {
@@ -28,20 +28,20 @@
 
 .menu-management-content {
   display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 2rem;
+  grid-template-columns: minmax(240px, 0.8fr) minmax(0, 2.2fr);
+  gap: 1rem;
   align-items: start;
+  min-width: 0;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1180px) {
   .menu-management-content {
     grid-template-columns: 1fr;
   }
 }
 
-/* Add Item Form */
 .add-item-card {
-  padding: 1.5rem;
+  padding: 1rem;
 }
 
 .add-item-card h2,
@@ -127,17 +127,16 @@
   font-weight: 600;
 }
 
-/* Items List Card */
 .items-list-card {
-  padding: 1.5rem;
+  padding: 1rem;
   min-width: 0;
+  width: 100%;
   overflow: hidden;
 }
 
 .items-table-container {
-  overflow-x: auto !important;
-  -webkit-overflow-scrolling: touch;
   width: 100%;
+  min-width: 0;
 }
 
 .empty-msg {
@@ -147,27 +146,51 @@
   padding: 2rem 0;
 }
 
+/* Desktop Table Styles */
 .menu-items-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.875rem;
+  table-layout: fixed;
+  font-size: 0.82rem;
+}
+
+.menu-items-table th:nth-child(1) {
+  width: 38%;
+}
+
+.menu-items-table th:nth-child(2) {
+  width: 17%;
+}
+
+.menu-items-table th:nth-child(3) {
+  width: 13%;
+}
+
+.menu-items-table th:nth-child(4) {
+  width: 18%;
+}
+
+.menu-items-table th:nth-child(5) {
+  width: 14%;
 }
 
 .menu-items-table th {
   text-align: left;
-  padding: 0.75rem 1rem;
+  padding: 0.6rem 0.45rem;
   color: var(--text-muted);
   font-weight: 500;
   border-bottom: 1px solid var(--border-color);
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 
 .menu-items-table td {
-  padding: 0.75rem 1rem;
+  padding: 0.55rem 0.45rem;
   border-bottom: 1px solid var(--border-color);
   vertical-align: middle;
+  min-width: 0;
 }
 
 .menu-items-table tr:last-child td {
@@ -181,30 +204,38 @@
 .table-dish-info {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
+  min-width: 0;
 }
 
 .dish-img {
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   border-radius: 8px;
   background-size: cover;
   background-position: center;
   border: 1px solid var(--border-color);
+  flex-shrink: 0;
 }
 
 .dish-name {
   font-weight: 600;
   color: var(--text-main);
+  overflow-wrap: anywhere;
 }
 
 .dish-category-badge {
   background: var(--bg-color);
-  padding: 0.25rem 0.6rem;
+  padding: 0.2rem 0.45rem;
   border-radius: 6px;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--text-muted);
   font-weight: 500;
+  display: inline-flex;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .dish-price {
@@ -215,16 +246,17 @@
 .status-toggle-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.25rem;
   border: none;
   background: transparent;
   cursor: pointer;
-  padding: 0.25rem;
+  padding: 0.25rem 0.15rem;
   border-radius: 6px;
   font-family: inherit;
-  font-size: 0.8rem;
+  font-size: 0.74rem;
   font-weight: 600;
   transition: background 0.2s;
+  max-width: 100%;
 }
 
 .status-toggle-btn.enabled {
@@ -244,9 +276,13 @@
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  padding: 0.4rem;
+  padding: 0.35rem;
   border-radius: 6px;
   transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .delete-dish-btn:hover {
@@ -259,12 +295,20 @@
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  padding: 0.4rem;
+  padding: 0.35rem;
   border-radius: 6px;
   transition: all 0.2s;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+.dish-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  min-width: 0;
 }
 
 .edit-dish-btn:hover {
@@ -276,6 +320,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
+  min-width: 0;
 }
 
 .dish-mobile-category {
@@ -289,21 +334,65 @@
   width: fit-content;
 }
 
-@media (max-width: 600px) {
-  /* Merge category into dish details column on mobile screen sizes */
-  .dish-mobile-category {
-    display: inline-block;
-  }
-  
-  /* Hide the separate category header and category column */
-  .menu-items-table th:nth-child(2),
-  .menu-items-table td:nth-child(2) {
+/* Mobile Card View - replaces table on small screens */
+.mobile-items-list {
+  display: none;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.mobile-item-card {
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.mobile-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mobile-item-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.mobile-item-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  padding-top: 0.25rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.mobile-item-card.item-disabled {
+  opacity: 0.6;
+}
+
+/* Mobile breakpoints */
+@media (max-width: 900px) {
+  .desktop-table {
     display: none !important;
   }
-  
-  /* Hide text in status button, only keeping Lucide toggle icon */
+
+  .mobile-items-list {
+    display: flex;
+  }
+}
+
+@media (max-width: 1180px) and (min-width: 901px) {
   .status-text {
-    display: none !important;
+    display: none;
   }
 }
 
@@ -312,19 +401,8 @@
     grid-template-columns: 1fr;
     gap: 1rem;
   }
-  
-  .menu-items-table th, 
-  .menu-items-table td {
-    padding: 0.5rem 0.6rem !important;
-    font-size: 0.8rem !important;
-  }
-  
-  .dish-img {
-    width: 32px !important;
-    height: 32px !important;
-  }
-  
-  .delete-dish-btn {
-    padding: 0.25rem !important;
+
+  .menu-management-page {
+    padding: 0.75rem !important;
   }
 }

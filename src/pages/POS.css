@@ -1,6 +1,7 @@
 .pos-container {
   display: flex;
-  height: 100vh;
+  height: 100%;
+  min-height: 0;
   overflow: hidden;
   position: relative;
 }
@@ -74,10 +75,11 @@
 /* ---- Menu Section ---- */
 .pos-menu {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: 1.5rem;
+  padding: 1.25rem;
   gap: 1rem;
 }
 
@@ -151,10 +153,13 @@
 /* ---- Menu Grid ---- */
 .menu-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.85rem;
   overflow-y: auto;
+  flex: 1;
+  min-height: 0;
   padding-bottom: 1rem;
+  align-content: start;
 }
 
 .menu-card {
@@ -172,7 +177,7 @@
 }
 
 .menu-card-image {
-  height: 130px;
+  height: 110px;
   background-size: cover;
   background-position: center;
   background-color: var(--bg-color);
@@ -180,7 +185,7 @@
 }
 
 .menu-card-content {
-  padding: 0.75rem;
+  padding: 0.65rem 0.7rem;
   display: flex;
   flex-direction: column;
   flex-grow: 1;
@@ -188,7 +193,7 @@
 }
 
 .menu-card-content h3 {
-  font-size: 0.9rem;
+  font-size: 0.84rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
   color: var(--text-main);
@@ -203,12 +208,13 @@
 .price {
   font-weight: 700;
   color: var(--primary);
-  font-size: 1rem;
+  font-size: 0.92rem;
+  white-space: nowrap;
 }
 
 .add-btn {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: var(--primary);
   color: white;
@@ -259,10 +265,11 @@
 .cart-items {
   flex: 1;
   overflow-y: auto;
-  padding: 1rem;
+  padding: 0.75rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.6rem;
+  min-width: 0;
 }
 
 .empty-cart {
@@ -279,21 +286,24 @@
 .cart-item {
   background: var(--bg-color);
   border-radius: 10px;
-  padding: 0.75rem;
+  padding: 0.65rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.45rem;
+  min-width: 0;
 }
 
 .cart-item-info {
   flex: 1;
+  min-width: 0;
 }
 
 .cart-item-info h4 {
-  font-size: 0.875rem;
+  font-size: 0.82rem;
   font-weight: 600;
   margin-bottom: 0.2rem;
+  overflow-wrap: anywhere;
 }
 
 .cart-item-price {
@@ -304,12 +314,13 @@
 .cart-item-actions {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.25rem;
+  flex-shrink: 0;
 }
 
 .qty-btn {
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   border-radius: 6px;
   border: 1px solid var(--border-color);
   background: white;
@@ -326,15 +337,15 @@
 }
 
 .qty {
-  width: 24px;
+  width: 20px;
   text-align: center;
   font-weight: 600;
   font-size: 0.875rem;
 }
 
 .delete-btn {
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   border-radius: 6px;
   border: none;
   background: transparent;
@@ -344,7 +355,8 @@
   align-items: center;
   justify-content: center;
   transition: all 0.15s;
-  margin-left: 0.25rem;
+  margin-left: 0.1rem;
+  flex-shrink: 0;
 }
 
 .delete-btn:hover {
@@ -399,7 +411,7 @@
   display: none;
 }
 
-@media (max-width: 899px) {
+@media (max-width: 1024px) {
   .pos-mobile-tabs {
     display: flex;
     background: white;
@@ -408,6 +420,7 @@
     position: sticky;
     top: 0;
     z-index: 10;
+    flex-shrink: 0;
   }
 
   .pos-mobile-tab {
@@ -447,7 +460,7 @@
   .pos-container {
     flex-direction: column;
     height: 100%;
-    overflow-y: auto;
+    overflow: hidden; /* Avoid double scrolling; outer container is fixed height */
   }
 
   /* Toggle displays based on active tab class on container */
@@ -472,8 +485,12 @@
   }
 
   .pos-menu {
-    padding: 0.5rem !important;
-    height: calc(100vh - 120px);
+    padding: 0.75rem !important;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 
   .pos-header {
@@ -481,6 +498,7 @@
     align-items: stretch;
     gap: 0.6rem;
     padding: 0.25rem;
+    flex-shrink: 0;
   }
 
   .search-bar {
@@ -488,26 +506,133 @@
   }
 
   .category-tabs {
+    display: flex;
+    gap: 0.6rem;
     overflow-x: auto;
     flex-wrap: nowrap;
-    padding-bottom: 0.25rem;
+    padding: 0.5rem 0.25rem;
+    scrollbar-width: none; /* Hide standard Firefox scrollbars */
+    -ms-overflow-style: none; /* Hide IE scrollbars */
     -webkit-overflow-scrolling: touch;
+    flex-shrink: 0;
+  }
+
+  .category-tabs::-webkit-scrollbar {
+    display: none; /* Hide Chrome/Safari scrollbars */
   }
 
   .category-tab {
     flex-shrink: 0;
-    padding: 0.4rem 0.8rem;
-    font-size: 0.8rem;
+    padding: 0.55rem 1.15rem;
+    font-size: 0.85rem;
+    font-weight: 600;
   }
 
   .menu-grid {
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 0.5rem !important;
-    padding: 0.25rem;
+    gap: 0.75rem !important;
+    padding: 0.4rem 0.15rem;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    align-content: start;
+  }
+
+  /* Beautiful Vertical Card Layout on mobile */
+  .menu-card {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    position: relative;
+    height: 158px !important;
+    min-height: 158px !important;
+    padding: 0 !important;
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
   }
 
   .menu-card-image {
-    height: 90px !important;
+    display: block !important;
+    height: 86px !important;
+    width: 100% !important;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    border-radius: 12px 12px 0 0;
+    flex-shrink: 0;
+  }
+
+  .menu-card-content {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 0.5rem 0.55rem 0.5rem !important;
+    width: 100%;
+    min-height: 72px;
+    display: flex !important;
+    flex: 1 0 auto !important;
+    justify-content: flex-start !important;
+    gap: 0.15rem;
+    background: white;
+    color: var(--text-main);
+    position: relative;
+    z-index: 1;
+  }
+
+  .menu-card-content h3 {
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+    color: var(--text-main);
+    margin-bottom: 0.2rem !important;
+    line-height: 1.35;
+    /* Perfect line-clamping and text alignment */
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    min-height: 1.35em !important;
+    flex-shrink: 0;
+  }
+
+  .menu-card-footer {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 0.5rem;
+    flex-shrink: 0;
+    margin-top: 0 !important;
+    padding-top: 0;
+  }
+
+  .price {
+    font-size: 1rem !important;
+    font-weight: 800 !important;
+    color: var(--primary) !important;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  .add-btn {
+    width: 28px !important;
+    height: 28px !important;
+    flex-shrink: 0;
+  }
+
+  .cart-header,
+  .table-selector,
+  .cart-summary {
+    padding: 0.8rem;
+  }
+
+  .cart-items {
+    padding: 0.65rem;
+  }
+
+  .cart-item {
+    align-items: flex-start;
   }
 
   /* Badge styling */
@@ -543,16 +668,16 @@
     justify-content: center;
     gap: 0.75rem;
     position: fixed;
-    bottom: 1.5rem;
-    left: 1rem;
-    right: 1rem;
+    bottom: 1rem;
+    left: 0.75rem;
+    right: 0.75rem;
     background: linear-gradient(135deg, var(--primary) 0%, #ff6b6b 100%);
     color: white;
     border: none;
-    padding: 1rem;
-    border-radius: 14px;
+    padding: 0.85rem;
+    border-radius: 12px;
     font-weight: 700;
-    font-size: 1rem;
+    font-size: 0.9rem;
     cursor: pointer;
     box-shadow: 0 8px 24px rgba(232, 65, 24, 0.4);
     z-index: 100;
@@ -568,5 +693,44 @@
     0% { transform: scale(0.9); opacity: 0; }
     50% { transform: scale(1.05); }
     100% { transform: scale(1); opacity: 1; }
+  }
+}
+
+@media (max-width: 420px) {
+  .pos-mobile-tab {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.82rem;
+  }
+
+  .category-tab {
+    padding: 0.48rem 0.85rem;
+    font-size: 0.78rem;
+  }
+
+  .menu-grid {
+    gap: 0.6rem !important;
+  }
+
+  .menu-card {
+    height: 148px !important;
+    min-height: 148px !important;
+  }
+
+  .menu-card-image {
+    height: 76px !important;
+  }
+
+  .menu-card-content {
+    min-height: 72px;
+  }
+
+  .qty-btn {
+    width: 22px;
+    height: 22px;
+  }
+
+  .delete-btn {
+    width: 24px;
+    height: 24px;
   }
 }
