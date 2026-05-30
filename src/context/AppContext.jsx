@@ -200,7 +200,7 @@ export function AppProvider({ children }) {
         const newOrder = await res.json(); // already mapped: has itemList, table string, time
         setActiveOrders(prev => prev.map(o => o.id === tempId ? newOrder : o));
         setTableOrder(tableId, newOrder);
-        return newOrder.id;
+        return newOrder;
       } else {
         const err = await res.json().catch(() => ({}));
         console.error('placeOrder API error:', err);

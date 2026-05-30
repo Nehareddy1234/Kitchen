@@ -210,8 +210,10 @@
 .customer-grid-scroll {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 0.25rem;
   min-height: 0;
+  max-width: 100%;
 }
 
 /* Beautiful responsive grid */
@@ -220,6 +222,9 @@
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 0.9rem;
   padding-bottom: 2rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 /* Dish Card styles */
@@ -233,6 +238,7 @@
   flex-direction: column;
   transition: transform 0.2s, box-shadow 0.2s;
   height: 100%; /* Stretch to row height in grid */
+  min-width: 0;
 }
 
 .customer-dish-card:hover {
@@ -240,6 +246,7 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
+.customer-dish-image,
 .customer-dish-image-placeholder {
   height: 105px;
   background: linear-gradient(135deg, #f8f9fa, #e9ecef);
@@ -251,7 +258,17 @@
   flex-shrink: 0;
 }
 
-.customer-dish-card:hover .customer-dish-image-placeholder {
+.customer-dish-image {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.customer-dish-image-placeholder {
+  display: none;
+}
+
+.customer-dish-card:hover .customer-dish-image {
   transform: scale(1.05);
 }
 
@@ -668,6 +685,8 @@
     gap: 0.65rem;
     height: calc(100vh - 60px); /* Height minus top header */
     overflow: hidden;
+    width: 100%;
+    max-width: 100%;
   }
 
   /* Handle Tab Toggle Display */
@@ -695,6 +714,9 @@
 
   .customer-menu-section {
     height: 100%;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
 
   .customer-search-bar {
@@ -703,7 +725,7 @@
   }
 
   .customer-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.75rem;
     padding-bottom: 5rem; /* Space for floating button */
   }
@@ -714,6 +736,7 @@
     min-height: 158px;
   }
 
+  .customer-dish-image,
   .customer-dish-image-placeholder {
     height: 76px;
     font-size: 1.7rem;
@@ -834,6 +857,7 @@
     min-height: 148px;
   }
 
+  .customer-dish-image,
   .customer-dish-image-placeholder {
     height: 66px;
   }
