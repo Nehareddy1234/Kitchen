@@ -45,6 +45,7 @@ export function AppProvider({ children }) {
   const [storeInventory, setStoreInventory] = useState([]);
   const [storeOrders, setStoreOrders] = useState([]);
   const isRefreshingRef = useRef(false);
+  const pendingClosedOrderIdsRef = useRef(new Set());
 
   const loadBackendData = async () => {
     const responses = {};
@@ -68,8 +69,13 @@ export function AppProvider({ children }) {
     if (responses.tables) setTables(responses.tables);
     if (responses.orders) {
       const allOrders = responses.orders;
-      const backendActiveOrders = allOrders.filter(o => o.status !== 'Paid');
-      setActiveOrders(prev => mergeLocalActiveOrders(prev, backendActiveOrders));
+      const backendActiveOrders = allOrders.filter(o =>
+        o.status !== 'Paid' && !pendingClosedOrderIdsRef.current.has(o.id)
+      );
+      setActiveOrders(prev =>
+        mergeLocalActiveOrders(prev, backendActiveOrders)
+          .filter(order => !pendingClosedOrderIdsRef.current.has(order.id))
+      );
       setOrderHistory(allOrders.filter(o => o.status === 'Paid'));
     }
     if (responses.grocery) setGroceryItems(responses.grocery);
@@ -137,7 +143,7 @@ export function AppProvider({ children }) {
     };
   }, []);
 
-  const buildLocalOrder = (cartItems, tableId, id = `local-${Date.now()}`) => {
+  const buildLocalOrder = (cartItems, tableId, paymentMethod = 'Cash', id = `local-${Date.now()}`) => {
     const now = new Date();
     const addOnTotal = (item) => ((item.addOns?.Roti || 0) * 15) + ((item.addOns?.Curry || 0) * 40);
     const total = cartItems.reduce((sum, item) => sum + (item.price + addOnTotal(item)) * item.quantity, 0);
@@ -148,6 +154,7 @@ export function AppProvider({ children }) {
       itemList: cartItems.map(item => `${item.name} x${item.quantity}`),
       total,
       status: 'Preparing',
+      paymentMethod,
       time: now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }),
       createdAt: now.toISOString(),
     };
@@ -180,9 +187,9 @@ export function AppProvider({ children }) {
   };
 
   // Place a new order
-  const placeOrder = async (cartItems, tableId) => {
+  const placeOrder = async (cartItems, tableId, paymentMethod = 'Cash') => {
     const tempId = `local-${Date.now()}`;
-    const optimisticOrder = buildLocalOrder(cartItems, tableId, tempId);
+    const optimisticOrder = buildLocalOrder(cartItems, tableId, paymentMethod, tempId);
     upsertActiveOrder(optimisticOrder);
     setTableOrder(tableId, optimisticOrder);
 
@@ -193,6 +200,7 @@ export function AppProvider({ children }) {
         // Send price per item so backend can accurately compute the total (incl. add-ons)
         body: JSON.stringify({
           tableId: tableId || null,
+          paymentMethod,
           items: cartItems.map(c => ({
             menuItemId: c.id,
             quantity: c.quantity,
@@ -288,21 +296,37 @@ export function AppProvider({ children }) {
     } catch (e) {}
   };
 
-  const closeOrder = async (orderId, paymentMethod = 'Cash') => {
+  const closeOrder = async (orderId, paymentMethod = null) => {
     const order = activeOrders.find(o => o.id === orderId);
     if (order) {
-      const paidOrder = { ...order, status: 'Paid', closedAt: new Date().toLocaleTimeString(), paymentMethod };
+      pendingClosedOrderIdsRef.current.add(orderId);
+      const finalPaymentMethod = paymentMethod || order.paymentMethod || 'Cash';
+      const paidOrder = { ...order, status: 'Paid', closedAt: new Date().toLocaleTimeString(), paymentMethod: finalPaymentMethod };
       setOrderHistory(prev => [paidOrder, ...prev]);
       setActiveOrders(prev => prev.filter(o => o.id !== orderId));
       setTables(prev => prev.map(t => t.order?.id === orderId ? { ...t, status: 'available', order: null } : t));
 
       try {
-        await fetch(`${API_BASE}/api/orders/${orderId}`, {
+        const res = await fetch(`${API_BASE}/api/orders/${orderId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'Paid', paymentMethod })
+          body: JSON.stringify({ status: 'Paid', paymentMethod: finalPaymentMethod })
         });
-      } catch (e) { console.error('closeOrder API error', e); }
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.details || err.error || `Failed to close order (${res.status})`);
+        }
+        await refreshData();
+      } catch (e) {
+        console.error('closeOrder API error', e);
+        pendingClosedOrderIdsRef.current.delete(orderId);
+        setOrderHistory(prev => prev.filter(o => o.id !== orderId));
+        setActiveOrders(prev => prev.some(o => o.id === orderId) ? prev : [order, ...prev]);
+        setTables(prev => prev.map(t =>
+          order.table === `Table ${t.name}` ? { ...t, status: 'occupied', order } : t
+        ));
+        throw e;
+      }
     }
   };
 
@@ -471,8 +495,33 @@ export function AppProvider({ children }) {
     setStoreInventory(prev => prev.map(item => item.id === id ? { ...item, stock: Math.max(0, newStock) } : item));
   };
   
-  const checkoutStoreOrder = (cartItems, paymentMethod) => {
-    return `#GRO-${Date.now().toString().slice(-4)}`;
+  const checkoutStoreOrder = (cartItems, paymentMethod = 'Cash') => {
+    const now = new Date();
+    const order = {
+      id: `GRO-${Date.now()}`,
+      orderNumber: Date.now().toString().slice(-6),
+      items: cartItems.map(item => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+      })),
+      total: cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
+      paymentMethod,
+      date: now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+      time: now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }),
+      createdAt: now.toISOString(),
+    };
+
+    setStoreOrders(prev => [order, ...prev]);
+    setStoreInventory(prev => prev.map(product => {
+      const cartItem = cartItems.find(item => item.id === product.id);
+      return cartItem
+        ? { ...product, stock: Math.max(0, product.stock - cartItem.quantity) }
+        : product;
+    }));
+
+    return order.id;
   };
 
   return (

@@ -67,7 +67,7 @@ export default function CustomerMenu() {
 
     let placedOrderId;
     try {
-      placedOrderId = await placeOrder(cartForOrder, tableId);
+      placedOrderId = await placeOrder(cartForOrder, tableId, paymentMethod);
     } catch (err) {
       alert(`Could not place order: ${err.message}`);
       setIsSubmitting(false);

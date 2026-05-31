@@ -147,6 +147,10 @@ function calcTotal(cartItems) {
   );
 }
 
+function normalizePaymentMethod(paymentMethod) {
+  return ['Cash', 'UPI', 'Card'].includes(paymentMethod) ? paymentMethod : 'Cash';
+}
+
 function parseOrderItems(items) {
   if (!Array.isArray(items) || items.length === 0) {
     throw new Error('Order must include at least one item');
@@ -632,6 +636,7 @@ export default async function handler(req, res) {
               tableId,
               total,
               status: 'Preparing',
+              paymentMethod: normalizePaymentMethod(body.paymentMethod),
               items: {
                 create: enrichedCart.map(ci => ({
                   menuItemId: ci.menuItemId,

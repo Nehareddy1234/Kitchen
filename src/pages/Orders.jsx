@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ChefHat, CheckCircle, Clock, Printer, Edit, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
@@ -11,9 +11,23 @@ const statusConfig = {
 
 export default function Orders() {
   const { activeOrders, markOrderReady, closeOrder, refreshData } = useApp();
-    const [paymentMethods, setPaymentMethods] = useState({});
   const [dialogOrderId, setDialogOrderId] = useState(null);
+  const [closingOrderId, setClosingOrderId] = useState(null);
   const navigate = useNavigate();
+
+  const handleCloseOrder = async (orderId, paymentMethod) => {
+    if (closingOrderId) return;
+
+    setClosingOrderId(orderId);
+    try {
+      await closeOrder(orderId, paymentMethod);
+      setDialogOrderId(null);
+    } catch (err) {
+      alert(`Could not close order: ${err.message}`);
+    } finally {
+      setClosingOrderId(null);
+    }
+  };
 
   return (
     <div className="orders-page">
@@ -77,13 +91,16 @@ export default function Orders() {
                         </button>
                         {dialogOrderId === order.id && (
                           <div className="payment-dialog">
-                            <button className="btn btn-primary" onClick={() => { closeOrder(order.id, 'Cash'); setDialogOrderId(null); }}>
-                              Cash
+                            <button className="btn btn-primary" disabled={closingOrderId === order.id} onClick={() => handleCloseOrder(order.id, 'Cash')}>
+                              {closingOrderId === order.id ? 'Closing...' : 'Cash'}
                             </button>
-                            <button className="btn btn-primary" onClick={() => { closeOrder(order.id, 'UPI'); setDialogOrderId(null); }}>
+                            <button className="btn btn-primary" disabled={closingOrderId === order.id} onClick={() => handleCloseOrder(order.id, 'UPI')}>
                               UPI
                             </button>
-                            <button className="btn btn-outline" onClick={() => setDialogOrderId(null)}>
+                            <button className="btn btn-primary" disabled={closingOrderId === order.id} onClick={() => handleCloseOrder(order.id, 'Card')}>
+                              Card
+                            </button>
+                            <button className="btn btn-outline" disabled={closingOrderId === order.id} onClick={() => setDialogOrderId(null)}>
                               Cancel
                             </button>
                           </div>
