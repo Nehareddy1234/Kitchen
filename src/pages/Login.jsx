@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Eye, EyeOff, LogIn, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -31,17 +31,19 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
     if (isSignUp) {
-      if (checkUsernameExists(username)) {
+      setLoading(true);
+      const usernameExists = await checkUsernameExists(username);
+      if (usernameExists) {
         setError('Username already taken.');
+        setLoading(false);
         return;
       }
       
-      setLoading(true);
       // Simulate sending OTP
       setTimeout(() => {
         const mockOtp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -51,8 +53,8 @@ export default function Login() {
       }, 500);
     } else {
       setLoading(true);
-      setTimeout(() => {
-        const result = login(username, password);
+      setTimeout(async () => {
+        const result = await login(username, password);
         if (result.success) {
           const userRole = result.user.role;
           if (userRole === 'waiter') {
@@ -70,7 +72,7 @@ export default function Login() {
     }
   };
 
-  const handleVerifyOtp = (e) => {
+  const handleVerifyOtp = async (e) => {
     e.preventDefault();
     if (enteredOtp.length !== 6) {
       setOtpError('Please enter a 6-digit OTP code.');
@@ -83,8 +85,8 @@ export default function Login() {
     }
 
     setLoading(true);
-    setTimeout(() => {
-      const result = register(username, password, displayName, role, phone, address);
+    setTimeout(async () => {
+      const result = await register(username, password, displayName, role, phone, address);
       if (result.success) {
         const userRole = result.user.role;
         if (userRole === 'waiter') {

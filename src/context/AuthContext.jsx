@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState } from 'react';
 
 // Relative URLs on Vercel (website), full URL in Capacitor (APK)
 const isCapacitor = typeof window !== 'undefined' && window.Capacitor !== undefined;
@@ -69,11 +69,29 @@ export const ROLE_NAV = {
 };
 
 const AuthContext = createContext(null);
+const AUTH_STORAGE_KEY = 'rc_user';
+
+function saveCurrentUser(user) {
+  try {
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+  } catch (e) {
+    console.warn("localStorage failed", e);
+  }
+}
+
+function clearCurrentUser() {
+  try {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+    sessionStorage.removeItem(AUTH_STORAGE_KEY);
+  } catch (e) {
+    console.warn("auth storage clear failed", e);
+  }
+}
 
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(() => {
     try {
-      const saved = sessionStorage.getItem('rc_user');
+      const saved = localStorage.getItem(AUTH_STORAGE_KEY) || sessionStorage.getItem(AUTH_STORAGE_KEY);
       return saved ? JSON.parse(saved) : null;
     } catch {
       return null;
@@ -114,11 +132,7 @@ export function AuthProvider({ children }) {
       if (res.ok) {
         const safeUser = await res.json();
         setCurrentUser(safeUser);
-        try {
-          sessionStorage.setItem('rc_user', JSON.stringify(safeUser));
-        } catch (e) {
-          console.warn("sessionStorage failed", e);
-        }
+        saveCurrentUser(safeUser);
         return { success: true, user: safeUser };
       }
     } catch (e) {
@@ -133,11 +147,7 @@ export function AuthProvider({ children }) {
     if (demoUser) {
       const { password: _pw, ...safeUser } = demoUser;
       setCurrentUser(safeUser);
-      try {
-        sessionStorage.setItem('rc_user', JSON.stringify(safeUser));
-      } catch (e) {
-        console.warn("sessionStorage failed", e);
-      }
+      saveCurrentUser(safeUser);
       return { success: true, user: safeUser };
     }
 
@@ -168,11 +178,7 @@ export function AuthProvider({ children }) {
       if (res.ok) {
         const safeUser = await res.json();
         setCurrentUser(safeUser);
-        try {
-          sessionStorage.setItem('rc_user', JSON.stringify(safeUser));
-        } catch (e) {
-          console.warn("sessionStorage failed", e);
-        }
+        saveCurrentUser(safeUser);
         return { success: true, user: safeUser };
       } else {
         const errBody = await res.json().catch(() => ({}));
@@ -186,11 +192,7 @@ export function AuthProvider({ children }) {
 
   const logout = () => {
     setCurrentUser(null);
-    try {
-      sessionStorage.removeItem('rc_user');
-    } catch (e) {
-      console.warn("sessionStorage clear failed", e);
-    }
+    clearCurrentUser();
   };
 
   const hasAccess = (path) => {
