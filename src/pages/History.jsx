@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Calendar, DollarSign, ShoppingBag, Eye, Printer, FileText } from 'lucide-react';
+import { Search, Calendar, DollarSign, ShoppingBag, Eye, Printer, FileText, Banknote, Smartphone } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import './History.css';
 
@@ -74,10 +74,13 @@ export default function History() {
     return matchesId || matchesNumber || matchesTable;
   });
 
-  const totalRevenue = filteredByDate.reduce((sum, order) => sum + order.total, 0);
+  const getOrderTotal = (order) => Number(order.total) || 0;
+  const getPaymentMethod = (order) => order.paymentMethod || 'Cash';
+
+  const totalRevenue = filteredByDate.reduce((sum, order) => sum + getOrderTotal(order), 0);
   const totalOrders = filteredByDate.length;
-  const cashTotal = filteredByDate.reduce((sum, order) => sum + (order.paymentMethod === 'Cash' ? order.total : 0), 0);
-  const upiTotal = filteredByDate.reduce((sum, order) => sum + (order.paymentMethod === 'UPI' ? order.total : 0), 0);
+  const cashTotal = filteredByDate.reduce((sum, order) => sum + (getPaymentMethod(order) === 'Cash' ? getOrderTotal(order) : 0), 0);
+  const upiTotal = filteredByDate.reduce((sum, order) => sum + (getPaymentMethod(order) === 'UPI' ? getOrderTotal(order) : 0), 0);
 
   const [showEODModal, setShowEODModal] = useState(false);
 
@@ -147,6 +150,26 @@ export default function History() {
           <div className="summary-info">
             <span className="summary-label">Total Paid Orders</span>
             <strong className="summary-value">{totalOrders} Orders</strong>
+          </div>
+        </div>
+
+        <div className="summary-card card">
+          <div className="summary-icon" style={{ background: 'rgba(39, 174, 96, 0.1)', color: '#27ae60' }}>
+            <Banknote size={20} />
+          </div>
+          <div className="summary-info">
+            <span className="summary-label">Total Cash Collected</span>
+            <strong className="summary-value">₹{cashTotal.toLocaleString()}</strong>
+          </div>
+        </div>
+
+        <div className="summary-card card">
+          <div className="summary-icon" style={{ background: 'rgba(108, 92, 231, 0.1)', color: '#6c5ce7' }}>
+            <Smartphone size={20} />
+          </div>
+          <div className="summary-info">
+            <span className="summary-label">Total UPI Collected</span>
+            <strong className="summary-value">₹{upiTotal.toLocaleString()}</strong>
           </div>
         </div>
       </div>

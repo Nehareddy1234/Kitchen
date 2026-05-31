@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 
 const AppContext = createContext(null);
 
@@ -44,28 +44,42 @@ export function AppProvider({ children }) {
   const [groceryItems, setGroceryItems] = useState([]);
   const [storeInventory, setStoreInventory] = useState([]);
   const [storeOrders, setStoreOrders] = useState([]);
+  const isRefreshingRef = useRef(false);
+
+  const loadBackendData = async () => {
+    const responses = {};
+    const endpoints = [
+      ['menu', `${API_BASE}/api/menu`],
+      ['tables', `${API_BASE}/api/tables`],
+      ['orders', `${API_BASE}/api/orders`],
+      ['grocery', `${API_BASE}/api/grocery`],
+    ];
+
+    for (const [key, endpoint] of endpoints) {
+      try {
+        const res = await fetch(endpoint);
+        responses[key] = res && res.ok ? await res.json() : null;
+      } catch {
+        responses[key] = null;
+      }
+    }
+
+    if (responses.menu) setMenuItems(responses.menu);
+    if (responses.tables) setTables(responses.tables);
+    if (responses.orders) {
+      const allOrders = responses.orders;
+      const backendActiveOrders = allOrders.filter(o => o.status !== 'Paid');
+      setActiveOrders(prev => mergeLocalActiveOrders(prev, backendActiveOrders));
+      setOrderHistory(allOrders.filter(o => o.status === 'Paid'));
+    }
+    if (responses.grocery) setGroceryItems(responses.grocery);
+  };
 
   // Fetch initial data from backend (fallback to defaults if backend not ready)
   useEffect(() => {
     const fetchBackendData = async () => {
       try {
-        const [menuRes, tablesRes, ordersRes, groceryRes] = await Promise.all([
-          fetch(`${API_BASE}/api/menu`).catch(() => null),
-          fetch(`${API_BASE}/api/tables`).catch(() => null),
-          fetch(`${API_BASE}/api/orders`).catch(() => null),
-          fetch(`${API_BASE}/api/grocery`).catch(() => null)
-        ]);
-
-        if (menuRes && menuRes.ok) setMenuItems(await menuRes.json());
-        // Tables are already mapped by the backend (order is the active order)
-        if (tablesRes && tablesRes.ok) setTables(await tablesRes.json());
-        if (ordersRes && ordersRes.ok) {
-          const allOrders = await ordersRes.json();
-          const backendActiveOrders = allOrders.filter(o => o.status !== 'Paid');
-          setActiveOrders(prev => mergeLocalActiveOrders(prev, backendActiveOrders));
-          setOrderHistory(allOrders.filter(o => o.status === 'Paid'));
-        }
-        if (groceryRes && groceryRes.ok) setGroceryItems(await groceryRes.json());
+        await loadBackendData();
       } catch (err) {
         console.error("Backend not reachable. Falling back to local state.", err);
       }
@@ -92,31 +106,22 @@ export function AppProvider({ children }) {
 
   // Refresh all data from the backend
   const refreshData = async () => {
+    if (isRefreshingRef.current) return;
+    isRefreshingRef.current = true;
+
     try {
-      const [menuRes, tablesRes, ordersRes, groceryRes] = await Promise.all([
-        fetch(`${API_BASE}/api/menu`).catch(() => null),
-        fetch(`${API_BASE}/api/tables`).catch(() => null),
-        fetch(`${API_BASE}/api/orders`).catch(() => null),
-        fetch(`${API_BASE}/api/grocery`).catch(() => null)
-      ]);
-      if (menuRes && menuRes.ok) setMenuItems(await menuRes.json());
-      if (tablesRes && tablesRes.ok) setTables(await tablesRes.json());
-      if (ordersRes && ordersRes.ok) {
-        const allOrders = await ordersRes.json();
-        const backendActiveOrders = allOrders.filter(o => o.status !== 'Paid');
-        setActiveOrders(prev => mergeLocalActiveOrders(prev, backendActiveOrders));
-        setOrderHistory(allOrders.filter(o => o.status === 'Paid'));
-      }
-      if (groceryRes && groceryRes.ok) setGroceryItems(await groceryRes.json());
+      await loadBackendData();
     } catch (err) {
       console.error('Refresh failed', err);
+    } finally {
+      isRefreshingRef.current = false;
     }
   };
 
   useEffect(() => {
     const intervalId = setInterval(() => {
       refreshData();
-    }, 5000);
+    }, 15000);
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {

@@ -30,11 +30,16 @@ const DEFAULT_TABLES = [
   { id: 7, name: 'T7', capacity: 2, status: 'available' },
 ];
 
+let defaultTablesReady = false;
+
 async function ensureDefaultTables() {
+  if (defaultTablesReady) return;
+
   await prisma.table.createMany({
     data: DEFAULT_TABLES,
     skipDuplicates: true,
   });
+  defaultTablesReady = true;
 }
 
 /**
@@ -140,6 +145,53 @@ function calcTotal(cartItems) {
       return sum + (ci.price + addOnCost) * ci.quantity;
     }, 0)
   );
+}
+
+function parseOrderItems(items) {
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new Error('Order must include at least one item');
+  }
+
+  return items.map(item => {
+    const menuItemId = Number.parseInt(item.menuItemId, 10);
+    const quantity = Number.parseInt(item.quantity, 10);
+    const price = Number(item.price);
+
+    if (!Number.isInteger(menuItemId) || menuItemId <= 0) {
+      throw new Error('Invalid menu item in order');
+    }
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      throw new Error('Invalid item quantity in order');
+    }
+
+    return {
+      menuItemId,
+      quantity,
+      price: Number.isFinite(price) && price >= 0 ? price : null,
+      addOns: item.addOns || null,
+    };
+  });
+}
+
+async function enrichCartItems(cartItems) {
+  const missingPriceIds = cartItems
+    .filter(item => item.price === null)
+    .map(item => item.menuItemId);
+
+  if (missingPriceIds.length === 0) {
+    return cartItems;
+  }
+
+  const menuItemRecords = await prisma.menuItem.findMany({
+    where: { id: { in: [...new Set(missingPriceIds)] } },
+    select: { id: true, price: true },
+  });
+  const priceMap = Object.fromEntries(menuItemRecords.map(m => [m.id, m.price]));
+
+  return cartItems.map(item => ({
+    ...item,
+    price: item.price ?? priceMap[item.menuItemId] ?? 0,
+  }));
 }
 
 /**
@@ -568,54 +620,37 @@ export default async function handler(req, res) {
        */
       if (method === 'POST') {
         const body = await getJsonBody(req);
-        const cartItems = body.items || [];
-
-        // Fetch prices for items we don't have them for
-        const menuItemIds = [...new Set(cartItems.map(ci => ci.menuItemId))];
-        const menuItemRecords = await prisma.menuItem.findMany({
-          where: { id: { in: menuItemIds } },
-          select: { id: true, price: true },
-        });
-        const priceMap = Object.fromEntries(menuItemRecords.map(m => [m.id, m.price]));
-
-        // Enrich cart items with prices
-        const enrichedCart = cartItems.map(ci => ({
-          ...ci,
-          price: ci.price ?? priceMap[ci.menuItemId] ?? 0,
-        }));
+        const cartItems = parseOrderItems(body.items);
+        const enrichedCart = await enrichCartItems(cartItems);
 
         const total = calcTotal(enrichedCart);
+        const tableId = body.tableId ? Number.parseInt(body.tableId, 10) : null;
 
-        const created = await prisma.order.create({
-          data: {
-            tableId: body.tableId ? parseInt(body.tableId) : null,
-            total,
-            status: 'Preparing',
-          },
-        });
-
-        if (enrichedCart.length > 0) {
-          await prisma.orderItem.createMany({
-            data: enrichedCart.map(ci => ({
-              orderId: created.id,
-              menuItemId: ci.menuItemId,
-              quantity: ci.quantity,
-              addOns: ci.addOns || null,
-            })),
+        const createdWithItems = await prisma.$transaction(async (tx) => {
+          const created = await tx.order.create({
+            data: {
+              tableId,
+              total,
+              status: 'Preparing',
+              items: {
+                create: enrichedCart.map(ci => ({
+                  menuItemId: ci.menuItemId,
+                  quantity: ci.quantity,
+                  addOns: ci.addOns,
+                })),
+              },
+            },
+            include: orderInclude,
           });
-        }
 
-        // If a table was assigned, mark it as occupied
-        if (body.tableId) {
-          await prisma.table.update({
-            where: { id: parseInt(body.tableId) },
-            data: { status: 'occupied' },
-          });
-        }
+          if (tableId) {
+            await tx.table.update({
+              where: { id: tableId },
+              data: { status: 'occupied' },
+            });
+          }
 
-        const createdWithItems = await prisma.order.findUnique({
-          where: { id: created.id },
-          include: orderInclude,
+          return created;
         });
 
         return send(res, 201, mapOrder(createdWithItems));
@@ -631,58 +666,78 @@ export default async function handler(req, res) {
 
         // Simple status-only update (e.g. Preparing → Ready → Paid)
         if (body.status && !body.items) {
-          const updated = await prisma.order.update({
-            where: { id },
-            data: { 
-              status: body.status,
-              paidAt: body.status === 'Paid' ? new Date() : undefined
-            },
-            include: orderInclude,
-          });
-
-          // If marking as Paid, free the table
-          if (body.status === 'Paid' && updated.tableId) {
-            await prisma.table.update({
-              where: { id: updated.tableId },
-              data: { status: 'available' },
+          const updated = await prisma.$transaction(async (tx) => {
+            const order = await tx.order.update({
+              where: { id },
+              data: {
+                status: body.status,
+                paymentMethod: body.paymentMethod !== undefined ? body.paymentMethod : undefined,
+                paidAt: body.status === 'Paid' ? new Date() : undefined,
+              },
+              include: orderInclude,
             });
-          }
+
+            if (body.status === 'Paid' && order.tableId) {
+              await tx.table.update({
+                where: { id: order.tableId },
+                data: { status: 'available' },
+              });
+            }
+
+            return order;
+          });
 
           return send(res, 200, mapOrder(updated));
         }
 
         // Full order update (items changed)
         if (body.items) {
-          const cartItems = body.items;
-          const menuItemIds = [...new Set(cartItems.map(ci => ci.menuItemId))];
-          const menuItemRecords = await prisma.menuItem.findMany({
-            where: { id: { in: menuItemIds } },
-            select: { id: true, price: true },
-          });
-          const priceMap = Object.fromEntries(menuItemRecords.map(m => [m.id, m.price]));
-          const enrichedCart = cartItems.map(ci => ({
-            ...ci,
-            price: ci.price ?? priceMap[ci.menuItemId] ?? 0,
-          }));
+          const cartItems = parseOrderItems(body.items);
+          const enrichedCart = await enrichCartItems(cartItems);
           const total = calcTotal(enrichedCart);
+          const nextTableId = body.tableId !== undefined
+            ? (body.tableId ? Number.parseInt(body.tableId, 10) : null)
+            : undefined;
 
-          // Delete old items and recreate
-          await prisma.orderItem.deleteMany({ where: { orderId: id } });
+          const updated = await prisma.$transaction(async (tx) => {
+            const existing = await tx.order.findUnique({
+              where: { id },
+              select: { tableId: true },
+            });
 
-          const updated = await prisma.order.update({
-            where: { id },
-            data: {
-              total,
-              tableId: body.tableId !== undefined ? (body.tableId ? parseInt(body.tableId) : null) : undefined,
-              items: {
-                create: enrichedCart.map(ci => ({
-                  menuItemId: ci.menuItemId,
-                  quantity: ci.quantity,
-                  addOns: ci.addOns || null,
-                })),
+            await tx.orderItem.deleteMany({ where: { orderId: id } });
+
+            const order = await tx.order.update({
+              where: { id },
+              data: {
+                total,
+                tableId: nextTableId,
+                items: {
+                  create: enrichedCart.map(ci => ({
+                    menuItemId: ci.menuItemId,
+                    quantity: ci.quantity,
+                    addOns: ci.addOns,
+                  })),
+                },
               },
-            },
-            include: orderInclude,
+              include: orderInclude,
+            });
+
+            if (existing?.tableId && existing.tableId !== order.tableId) {
+              await tx.table.update({
+                where: { id: existing.tableId },
+                data: { status: 'available' },
+              });
+            }
+
+            if (order.tableId) {
+              await tx.table.update({
+                where: { id: order.tableId },
+                data: { status: 'occupied' },
+              });
+            }
+
+            return order;
           });
 
           return send(res, 200, mapOrder(updated));
@@ -699,20 +754,19 @@ export default async function handler(req, res) {
       }
 
       if (method === 'DELETE' && id) {
-        // Get the order to find its table
-        const order = await prisma.order.findUnique({ where: { id }, select: { tableId: true } });
+        await prisma.$transaction(async (tx) => {
+          const order = await tx.order.findUnique({ where: { id }, select: { tableId: true } });
 
-        // Delete order items first (cascade safety)
-        await prisma.orderItem.deleteMany({ where: { orderId: id } });
-        await prisma.order.delete({ where: { id } });
+          await tx.orderItem.deleteMany({ where: { orderId: id } });
+          await tx.order.delete({ where: { id } });
 
-        // Free the table if it was assigned
-        if (order?.tableId) {
-          await prisma.table.update({
-            where: { id: order.tableId },
-            data: { status: 'available' },
-          });
-        }
+          if (order?.tableId) {
+            await tx.table.update({
+              where: { id: order.tableId },
+              data: { status: 'available' },
+            });
+          }
+        });
 
         return send(res, 200, { success: true });
       }
@@ -733,6 +787,22 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error(error);
+
+    if (error.code === 'P2024') {
+      return send(res, 503, {
+        error: 'Database is busy. Please try again in a few seconds.',
+      });
+    }
+
+    if (
+      error.message === 'Order must include at least one item' ||
+      error.message === 'Invalid menu item in order' ||
+      error.message === 'Invalid item quantity in order'
+    ) {
+      return send(res, 400, {
+        error: error.message,
+      });
+    }
 
     return send(res, 500, {
       error: 'Internal server error',

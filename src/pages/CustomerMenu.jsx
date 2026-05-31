@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ShoppingCart, Search, Minus, Plus, Trash2, Banknote, CreditCard, SmartphoneNfc, CheckCircle2, LogOut } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
@@ -17,6 +17,7 @@ export default function CustomerMenu() {
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderId, setOrderId] = useState('');
   const [activeTab, setActiveTab] = useState('menu'); // 'menu' or 'cart' on mobile viewports
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const categories = ['All', ...new Set(menuItems.filter(i => i.enabled !== false).map(i => i.category))];
 
@@ -47,8 +48,8 @@ export default function CustomerMenu() {
   const cartCount = cart.reduce((sum, c) => sum + c.qty, 0);
 
   const handlePlaceOrder = async () => {
-    if (cart.length === 0) return;
-    const now = new Date();
+    if (cart.length === 0 || isSubmitting) return;
+    setIsSubmitting(true);
 
     // Format cart items for placeOrder function
     const cartForOrder = cart.map(c => ({
@@ -69,12 +70,14 @@ export default function CustomerMenu() {
       placedOrderId = await placeOrder(cartForOrder, tableId);
     } catch (err) {
       alert(`Could not place order: ${err.message}`);
+      setIsSubmitting(false);
       return;
     }
     setOrderId(placedOrderId ? `#${String(placedOrderId).slice(-8)}` : '#ORD-CUST');
     setCart([]);
     setOrderPlaced(true);
     setActiveTab('menu');
+    setIsSubmitting(false);
   };
 
   if (orderPlaced) {
@@ -286,10 +289,10 @@ export default function CustomerMenu() {
 
             <button
               onClick={handlePlaceOrder}
-              disabled={cart.length === 0}
+              disabled={cart.length === 0 || isSubmitting}
               className="customer-cart-checkout-btn"
             >
-              Place Order
+              {isSubmitting ? 'Saving...' : 'Place Order'}
             </button>
           </div>
         </div>

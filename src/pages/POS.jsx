@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Plus, Minus, Trash2, ShoppingCart } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
@@ -27,6 +27,7 @@ export default function POS() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [loadedOrderId, setLoadedOrderId] = useState(null);
   const [activeTab, setActiveTab] = useState('menu'); // 'menu' or 'cart' for mobile viewports
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Load existing order when editOrderId changes
   useEffect(() => {
@@ -143,8 +144,9 @@ export default function POS() {
   }, 0);
 
   const handlePlaceOrder = async () => {
-    if (cart.length === 0) return;
+    if (cart.length === 0 || isSubmitting) return;
     const tableId = selectedTable ? parseInt(selectedTable) : null;
+    setIsSubmitting(true);
 
     try {
       if (editOrderId) {
@@ -154,6 +156,7 @@ export default function POS() {
       }
     } catch (err) {
       alert(`Could not place order: ${err.message}`);
+      setIsSubmitting(false);
       return;
     }
 
@@ -164,6 +167,7 @@ export default function POS() {
     setActiveTab('menu');
     setShowSuccess(true);
     setTimeout(() => { setShowSuccess(false); navigate('/orders'); }, 1500);
+    setIsSubmitting(false);
   };
 
   const handleCancelEdit = () => {
@@ -369,10 +373,10 @@ export default function POS() {
             <button
               className="btn btn-primary checkout-btn"
               style={editOrderId ? { flex: 2, marginTop: 0 } : {}}
-              disabled={cart.length === 0}
+              disabled={cart.length === 0 || isSubmitting}
               onClick={handlePlaceOrder}
             >
-              {editOrderId ? 'Update Order' : 'Place Order'}
+              {isSubmitting ? 'Saving...' : (editOrderId ? 'Update Order' : 'Place Order')}
             </button>
           </div>
         </div>
