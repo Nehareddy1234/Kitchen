@@ -37,9 +37,7 @@ export default function CustomerMenu() {
 
   const updateQty = (id, delta) => {
     setCart(prev =>
-      prev
-        .map(c => c.id === id ? { ...c, qty: c.qty + delta } : c)
-        .filter(c => c.qty > 0)
+      prev.map(c => c.id === id ? { ...c, qty: Math.max(1, c.qty + delta) } : c)
     );
   };
 
@@ -66,14 +64,14 @@ export default function CustomerMenu() {
     const tableIdMatch = orderType === 'Dine-In' ? tableNo.match(/\d+/) : null;
     const tableId = tableIdMatch ? parseInt(tableIdMatch[0], 10) : null;
 
-    let placedOrder;
+    let placedOrderId;
     try {
-      placedOrder = await placeOrder(cartForOrder, tableId);
+      placedOrderId = await placeOrder(cartForOrder, tableId);
     } catch (err) {
       alert(`Could not place order: ${err.message}`);
       return;
     }
-    setOrderId(placedOrder?.orderNumber ? `#${placedOrder.orderNumber}` : '#ORD-CUST');
+    setOrderId(placedOrderId ? `#${String(placedOrderId).slice(-8)}` : '#ORD-CUST');
     setCart([]);
     setOrderPlaced(true);
     setActiveTab('menu');
@@ -184,13 +182,6 @@ export default function CustomerMenu() {
             <div className="customer-grid">
               {filteredItems.map(item => (
                 <div key={item.id} className="customer-dish-card">
-                  <div
-                    className="customer-dish-image"
-                    style={{
-                      backgroundImage: `url("${item.image || ''}"), url("https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&q=80&w=400&h=260")`,
-                    }}
-                    aria-label={item.name}
-                  />
                   <div className="customer-dish-image-placeholder">
                     🍛
                   </div>
